@@ -28,11 +28,27 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/imgproc/imgproc_c.h>
+#if _WIN32
+
+// Windows
+
+#include <opencv2\objdetect\objdetect.hpp>
+#include <opencv2\highgui\highgui.hpp>
+#include <opencv2\highgui\highgui_c.h>
+#include <opencv2\imgproc\imgproc_c.h>
+#include <opencv2\imgproc\imgproc.hpp>
+
+#else
+
+// Unix Based System
+
 #include <opencv2/objdetect/objdetect.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/imgproc/imgproc.hpp>
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

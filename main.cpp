@@ -17,11 +17,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+#if _WIN32
+
+// Windows
+
+#include <opencv2\objdetect\objdetect.hpp>
+#include <opencv2\highgui\highgui.hpp>
+#include <opencv2\highgui\highgui_c.h>
+#include <opencv2\imgproc\imgproc_c.h>
+#include <opencv2\imgproc\imgproc.hpp>
+
+#else
+
+// Unix Based System
+
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/imgproc/imgproc.hpp>
+
+#endif
 
 #include <iostream>
 #include <cstdio>
@@ -47,7 +63,7 @@ inline void face_detection(IplImage* image)
    std::chrono::time_point<std::chrono::system_clock> start, end;
    
    start = std::chrono::system_clock::now();
-   eye_cascade.detectMultiScale(mat_image, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(75, 75));
+   face_cascade.detectMultiScale(mat_image, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(75, 75));
    end = std::chrono::system_clock::now();
    
    std::chrono::duration<double> elapsed_seconds = end-start;
@@ -55,7 +71,7 @@ inline void face_detection(IplImage* image)
    
    cv::Mat cropped;
    
-   for (int i = 0; i < eyes.size(); i++)
+   for (size_t i = 0; i < eyes.size(); i++)
    {
       cv::rectangle(mat_image, eyes[i], cv::Scalar( 255, 0, 0 ));
       
@@ -76,8 +92,20 @@ inline bool process_frame(IplImage* frame)
 
 int main()
 {
-   face_cascade.load("/Users/jarret/Downloads/haarcascade_frontalface_alt.xml");
-   eye_cascade.load("/Users/jarret/Downloads/haarcascade_eye.xml");
+   const char* face_xml = "C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml";
+   const char* eye_cascade_xml = "C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye.xml";
+
+   std::cout << face_xml << std::endl;
+
+   #ifdef _WIN32
+      face_cascade.load(face_xml);
+      eye_cascade.load(eye_cascade_xml);
+
+   #else
+      face_cascade.load("/Users/jarret/Downloads/haarcascade_frontalface_alt.xml");
+      eye_cascade.load("/Users/jarret/Downloads/haarcascade_eye.xml");
+   
+   #endif
    
    video_capture<process_frame, true> input;
 
