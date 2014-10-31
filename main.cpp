@@ -47,13 +47,10 @@ inline void face_detection(IplImage* image)
    std::chrono::time_point<std::chrono::system_clock> start, end;
    
    start = std::chrono::system_clock::now();
-   
    eye_cascade.detectMultiScale(mat_image, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(75, 75));
-
    end = std::chrono::system_clock::now();
    
    std::chrono::duration<double> elapsed_seconds = end-start;
-   
    std::cout << elapsed_seconds.count() << std::endl;
    
    cv::Mat cropped;
