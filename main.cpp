@@ -26,6 +26,7 @@
 #include <iostream>
 #include <cstdio>
 #include <vector>
+#include <chrono>
 
 #include "video_capture.hpp"
 
@@ -34,24 +35,34 @@
 
 // Load Face cascade (.xml file)
 cv::CascadeClassifier face_cascade;
+cv::CascadeClassifier eye_cascade;
 
 inline void face_detection(IplImage* image)
 {
    cv::Mat mat_image(image);
    
    // Detect faces
-   std::vector<cv::Rect> faces;
-   face_cascade.detectMultiScale(mat_image, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(30, 30));
-
-   // Draw circles on the detected faces
-   for (int i = 0; i < faces.size(); i++)
-   {
-      cv::Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
-      cv::ellipse(mat_image, center, cv::Size(faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, cv::Scalar(255, 0, 255), 4, 8, 0);
-   }
+   std::vector<cv::Rect> eyes;
    
-   cv::imshow("Detected Face", mat_image);
+   std::chrono::time_point<std::chrono::system_clock> start, end;
+   
+   start = std::chrono::system_clock::now();
+   
+   eye_cascade.detectMultiScale(mat_image, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(75, 75));
 
+   end = std::chrono::system_clock::now();
+   
+   std::chrono::duration<double> elapsed_seconds = end-start;
+   
+   std::cout << elapsed_seconds.count() << std::endl;
+   
+   cv::Mat cropped;
+   
+   for (int i = 0; i < eyes.size(); i++)
+   {
+      cv::rectangle(mat_image, eyes[i], cv::Scalar( 255, 0, 0 ));
+      
+   }
 }
 
 inline bool process_frame(IplImage* frame)
@@ -69,6 +80,7 @@ inline bool process_frame(IplImage* frame)
 int main()
 {
    face_cascade.load("/Users/jarret/Downloads/haarcascade_frontalface_alt.xml");
+   eye_cascade.load("/Users/jarret/Downloads/haarcascade_eye.xml");
    
    video_capture<process_frame, true> input;
 
