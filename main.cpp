@@ -82,17 +82,15 @@ inline void face_detection(IplImage* image)
       object_mat.copyTo(cropped);
 
       std::vector<cv::Rect> eyes;
-
+      
       eye_cascade.detectMultiScale(cropped, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(25, 25));
 
       // Print all the objects detected
-      for (int i = 0; i < objects.size(); i++)
+      for (int i = 0; i < eyes.size(); i++)
       {
-         cv::rectangle(mat_image, objects[i], cv::Scalar(255, 0, 0));
-
-         cv::Mat object_mat(mat_image, objects[i]);
-
-         object_mat.copyTo(cropped);
+         cv::Rect eye_rect(eyes[i].x + objects[i].x, eyes[i].y + objects[i].y, eyes[i].width, eyes[i].height);
+         
+         cv::rectangle(mat_image, eye_rect, cv::Scalar(255, 0, 0));
 
       }
       
@@ -104,7 +102,7 @@ inline bool process_frame(IplImage* frame)
    // process the frame here
    
    // Look for Face
-   //face_detection(frame);
+   face_detection(frame);
    
    // Not finished
    return false;
