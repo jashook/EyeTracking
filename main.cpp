@@ -63,7 +63,7 @@ inline void face_detection(IplImage* image)
    std::chrono::time_point<std::chrono::system_clock> start, end;
    
    start = std::chrono::system_clock::now();
-   eye_cascade.detectMultiScale(mat_image, objects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(75, 75));
+   face_cascade.detectMultiScale(mat_image, objects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(75, 75));
    end = std::chrono::system_clock::now();
    
    // Print the time processing took
@@ -76,6 +76,25 @@ inline void face_detection(IplImage* image)
    for (int i = 0; i < objects.size(); i++)
    {
       cv::rectangle(mat_image, objects[i], cv::Scalar( 255, 0, 0 ));
+
+      cv::Mat object_mat(mat_image, objects[i]);
+
+      object_mat.copyTo(cropped);
+
+      std::vector<cv::Rect> eyes;
+
+      eye_cascade.detectMultiScale(cropped, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(25, 25));
+
+      // Print all the objects detected
+      for (int i = 0; i < objects.size(); i++)
+      {
+         cv::rectangle(mat_image, objects[i], cv::Scalar(255, 0, 0));
+
+         cv::Mat object_mat(mat_image, objects[i]);
+
+         object_mat.copyTo(cropped);
+
+      }
       
    }
 }
@@ -85,7 +104,7 @@ inline bool process_frame(IplImage* frame)
    // process the frame here
    
    // Look for Face
-   face_detection(frame);
+   //face_detection(frame);
    
    // Not finished
    return false;
