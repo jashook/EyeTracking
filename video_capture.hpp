@@ -28,11 +28,27 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/imgproc/imgproc_c.h>
+#if _WIN32
+
+// Windows
+
+#include <opencv2\objdetect\objdetect.hpp>
+#include <opencv2\highgui\highgui.hpp>
+#include <opencv2\highgui\highgui_c.h>
+#include <opencv2\imgproc\imgproc_c.h>
+#include <opencv2\imgproc\imgproc.hpp>
+
+#else
+
+// Unix Based System
+
 #include <opencv2/objdetect/objdetect.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/imgproc/imgproc.hpp>
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,42 +90,41 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
       void capture_sync()
       {
          IplImage* frame = NULL;
-
+      
          bool done = false;
-
+      
          while (!done)
          {
             // Get the frame
             frame = cvQueryFrame(_m_capture);
-
+         
             if (frame)
             {
                // Start processing
                done = __ProcessingFunction(frame);
-
+            
                if (__Gui)
                {
                   done = _show_default_gui(frame);
                }
             }
-
-
          }
       }
-
+   
    private: // Private Member functions
 
       bool _show_default_gui(IplImage* frame)
       {
          cvShowImage("Video", frame);
-
+      
          // Wait 10 ms for a key to be pressed
          int character = cvWaitKey(10);
-
+      
          // Break if the esc key is pressed
          if (character == ESC_KEY) return true;
-
+      
          return false;
+      
       }
 
 };
