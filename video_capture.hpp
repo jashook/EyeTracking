@@ -79,10 +79,12 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
 
          while (!done)
          {
+            // Get the frame
             frame = cvQueryFrame(_m_capture);
 
             if (frame)
             {
+               // Start processing
                done = __ProcessingFunction(frame);
 
                if (__Gui)
@@ -101,8 +103,10 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
       {
          cvShowImage("Video", frame);
 
+         // Wait 10 ms for a key to be pressed
          int character = cvWaitKey(10);
 
+         // Break if the esc key is pressed
          if (character == ESC_KEY) return true;
 
          return false;
