@@ -63,7 +63,7 @@ inline void face_detection(IplImage* image)
    std::chrono::time_point<std::chrono::system_clock> start, end;
    
    start = std::chrono::system_clock::now();
-   face_cascade.detectMultiScale(mat_image, objects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(75, 75));
+   face_cascade.detectMultiScale(mat_image, objects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(100, 100));
    end = std::chrono::system_clock::now();
    
    // Print the time processing took
@@ -83,16 +83,14 @@ inline void face_detection(IplImage* image)
 
       std::vector<cv::Rect> eyes;
 
-      eye_cascade.detectMultiScale(cropped, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(25, 25));
+      eye_cascade.detectMultiScale(cropped, eyes, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(1, 1));
 
       // Print all the objects detected
-      for (int i = 0; i < objects.size(); i++)
+      for (int j = 0; j < eyes.size(); j++)
       {
-         cv::rectangle(mat_image, objects[i], cv::Scalar(255, 0, 0));
-
-         cv::Mat object_mat(mat_image, objects[i]);
-
-         object_mat.copyTo(cropped);
+         cv::Rect eye_rectangle(eyes[j].x + objects[i].x, eyes[j].y + objects[i].y, eyes[j].size().width, eyes[j].size().height);
+         
+         cv::rectangle(mat_image, eye_rectangle, cv::Scalar(255, 0, 0));
 
       }
       
@@ -104,7 +102,7 @@ inline bool process_frame(IplImage* frame)
    // process the frame here
    
    // Look for Face
-   //face_detection(frame);
+   face_detection(frame);
    
    // Not finished
    return false;
