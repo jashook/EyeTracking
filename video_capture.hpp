@@ -42,11 +42,11 @@
 
 // Unix Based System
 
-#include <opencv2/objdetect/objdetect.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/highgui/highgui_c.h>
-#include <opencv2/imgproc/imgproc_c.h>
-#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv/objdetect/objdetect.hpp>
+#include <opencv/highgui/highgui.hpp>
+#include <opencv/highgui/highgui_c.h>
+#include <opencv/imgproc/imgproc_c.h>
+#include <opencv/imgproc/imgproc.hpp>
 
 #endif
 
