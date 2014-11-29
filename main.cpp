@@ -130,7 +130,7 @@ inline void face_detection(IplImage* image)
    //draw center of detected circles
    for (size_t i = 0; i < circles.size(); i++)
    {
-      //store points
+      //draw points
       cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
       cv::circle(lEyeROI_color, center, 3, cv::Scalar(0, 255, 0));
       cv::circle(lEyeROI, center, 3, cv::Scalar(0, 0, 255));

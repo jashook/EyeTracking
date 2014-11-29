@@ -76,6 +76,19 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
          {
              std::cerr << "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again." << std::endl;
          }
+         else
+         {
+            //set resolution
+               //try 480p
+            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_WIDTH, 640);
+            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_HEIGHT, 480);
+               //try 720p
+            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_WIDTH, 1280);
+            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_HEIGHT, 720);
+               //try 1080p
+            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_WIDTH, 1920);
+            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_HEIGHT, 1080);
+         }
       }
 
       ~video_capture()
