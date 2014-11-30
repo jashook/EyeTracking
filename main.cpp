@@ -45,38 +45,48 @@
 #include <chrono>
 
 #include "video_capture.hpp"
-#include "constants.h"
+#include "eye_constants.hpp"
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+#if 0
+
+#define DEBUG_FLAG
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 // Load Face cascade (.xml file)
 cv::CascadeClassifier face_cascade;
-cv::CascadeClassifier eye_cascade;
 
 inline void face_detection(IplImage* image)
 {
-   //debug flag
-   bool displayTemps = false;
-   if (displayTemps)
-   {
+   
+   #ifdef DEBUG_FLAG
+
       cv::namedWindow("debug_gray", CV_WINDOW_AUTOSIZE);
       cv::namedWindow("debug_color", CV_WINDOW_AUTOSIZE);
-      cv::namedWindow("debug_blur", CV_WINDOW_AUTOSIZE);
-   }
-   else
-      cv::namedWindow("debug_blur", CV_WINDOW_AUTOSIZE);
+   
+   #endif
+   
+   cv::namedWindow("debug_blur", CV_WINDOW_AUTOSIZE);
+   
 
    cv::Mat mat_image(image);
    cv::Mat mat_gray = mat_image;
 
    //convert to gray scale
    cvtColor(mat_image, mat_gray, CV_BGR2GRAY);
-   if (displayTemps)
-   {
+   
+   #ifdef DEBUG_FLAG
+   
       cv::imshow("debug_gray", mat_gray);
       cv::imshow("debug_color", mat_image);
-   }
+   
+   #endif
 
    // Detect faces
    std::vector<cv::Rect> objects;
@@ -91,30 +101,37 @@ inline void face_detection(IplImage* image)
    std::chrono::duration<double> elapsed_seconds = end - start;
    std::cout << elapsed_seconds.count() << std::endl;
 
-   //check to see that faces were found - if not, return
+   // Check to see that faces were found - if not, return
    if (objects.size() < 1)
+   {
       return;
-   
-   //-- Find eye regions (using magic numbers from constants.h)
+   }
+      
+   // Find eye regions (numbers included from constants.h)
    cv::Rect face = objects[0];
+   
    cv::Mat faceROI_gray = mat_gray(face);
    cv::Mat faceROI = mat_image(face);
+   
    int eye_region_width = face.width * (kEyePercentWidth / 100.0);
    int eye_region_height = face.width * (kEyePercentHeight / 100.0);
    int eye_region_top = face.height * (kEyePercentTop / 100.0);
-   cv::Rect leftEyeRegion(face.width * (kEyePercentSide / 100.0),
-      eye_region_top, eye_region_width, eye_region_height);
-   cv::Rect rightEyeRegion(face.width - eye_region_width - face.width * (kEyePercentSide / 100.0),
-      eye_region_top, eye_region_width, eye_region_height);
+   
+   cv::Rect leftEyeRegion(face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
+   cv::Rect rightEyeRegion(face.width - eye_region_width - face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
 
-   //make a mat out of the left eye
+   // Make a matrix out of the left eye
    cv::Mat lEyeROI = faceROI_gray(leftEyeRegion);
    cv::Mat lEyeROI_color = faceROI(leftEyeRegion);
-   if (displayTemps)
+   
+   #ifdef DEBUG_FLAG
+   
       cv::imshow("debug_color", lEyeROI_color);
 
-   //apply median filter
+   #endif
+   
    cv::medianBlur(lEyeROI, lEyeROI, 7);
+   
    //display result
    cv::imshow("debug_blur", lEyeROI);
 
@@ -135,7 +152,6 @@ inline void face_detection(IplImage* image)
       cv::circle(lEyeROI_color, center, 3, cv::Scalar(0, 255, 0));
       cv::circle(lEyeROI, center, 3, cv::Scalar(0, 0, 255));
       cv::imshow("debug_blur", lEyeROI);
-      int x = 3;
    }
 
    //-- Draw eye regions (left: green, right: red)
@@ -162,45 +178,52 @@ inline bool process_frame(IplImage* frame)
 
 inline void hough_test()
 {
-   using namespace cv;
-
-   //load image (test eye image located in resources)
-   Mat src, src_gray;
-   //read image
-   src = imread("eye.jpg", CV_LOAD_IMAGE_COLOR);
-   //display image
-   namedWindow("color", WINDOW_AUTOSIZE);
+   // Load image (test eye image located in resources)
+   cv::Mat src, src_gray;
+   
+   // Read image
+   src = cv::imread("eye.jpg", CV_LOAD_IMAGE_COLOR);
+   
+   // Display image
+   cv::namedWindow("color", cv::WINDOW_AUTOSIZE);
    imshow("color", src);
 
-   //proceess image
-   //convert to gray
+   // Proceess image
+   // Convert to Grayscale
    cvtColor(src, src_gray, CV_BGR2GRAY);
-   //display gray
-   namedWindow("gray");
+   
+   // Display the Grayscale Image
+   cv::namedWindow("gray");
    imshow("gray", src_gray);
-   //blur (median filter cuz fast)
+   
+   // Blur (median filter for speed)
    medianBlur(src_gray, src_gray, 21);
-   //display blur
-   namedWindow("gray_blur");
+   
+   // Display blur
+   cv::namedWindow("gray_blur");
    imshow("gray_blur", src_gray);
-   //hough transform
-   vector<Vec3f> circles;
+   
+   // Hough transform
+   std::vector<cv::Vec3f> circles;
    HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 2, src_gray.rows / 8, 100, 100, 0, 500);
-   //draw circles
+   
+   // Draw circles
    for (size_t i = 0; i < circles.size(); i++)
    {
-      Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+      cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
       int radius = cvRound(circles[i][2]);
-      //draw center
-      circle(src, center, 3, Scalar(0, 255, 0), -1, 8, 0);
-      //draw seg circle
-      circle(src, center, radius, Scalar(0, 0, 255), 3, 8, 0);
+      // Draw center
+      
+      circle(src, center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
+      
+      // Draw seg circle
+      circle(src, center, radius, cv::Scalar(0, 0, 255), 3, 8, 0);
    }
+   
    imshow("color", src);
 
-   //pause before return
-   waitKey(0);
-   int x = 3; //used with a breakpoint
+   // Pause before return
+   cv::waitKey(0);
 }
 
 int main()
@@ -209,11 +232,9 @@ int main()
    
    #ifdef _WIN32
       face_cascade.load("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
-      eye_cascade.load("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye.xml");
 
    #else
-      face_cascade.load("/Users/jarret/Downloads/haarcascade_frontalface_alt.xml");
-      eye_cascade.load("/Users/jarret/Downloads/haarcascade_eye.xml");
+      face_cascade.load("/Users/jarret/Projects/EyeTracking/haarcascades/haarcascade_frontalface_alt.xml");
    
    #endif
    

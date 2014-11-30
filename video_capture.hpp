@@ -62,40 +62,61 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
 {
    private: // Member Variables
 
-      CvCapture* _m_capture = NULL;
+      std::size_t _m_index;
+      std::vector<CvCapture*>* _m_captures;
 
    public: // Constructor | Destructor
 
-      video_capture() : _m_capture(NULL) 
-      { 
-         // Set up to capture from the first webcam
-         _m_capture = cvCaptureFromCAM(0);
-
-         // If the capture is still NULL, then we are unable to read
-         if (!_m_capture)
+      video_capture() : _m_index(-1), _m_captures(NULL)
+      {
+         _m_captures = new std::vector<CvCapture*>();
+         
+         bool error = true;
+         
+         for (std::size_t index = 0; index < 3; ++index)
          {
-             std::cerr << "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again." << std::endl;
+            // Set up to capture from the first webcam
+            _m_captures->push_back(cvCaptureFromCAM(0));
+            
+            // If the capture is still NULL, then we are unable to read
+            if (_m_captures->at(index))
+            {
+               error = false;
+            }
+         }
+         
+         if (error)
+         {
+            std::cerr << "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again." << std::endl;
          }
          else
          {
-            //set resolution
-               //try 480p
-            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_WIDTH, 640);
-            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_HEIGHT, 480);
-               //try 720p
-            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_WIDTH, 1280);
-            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_HEIGHT, 720);
-               //try 1080p
-            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_WIDTH, 1920);
-            cvSetCaptureProperty(_m_capture, CV_CAP_PROP_FRAME_HEIGHT, 1080);
+            // Set resolution
+            
+            // Try 480p
+            cvSetCaptureProperty(_m_captures->at(0), CV_CAP_PROP_FRAME_WIDTH, 640);
+            cvSetCaptureProperty(_m_captures->at(0), CV_CAP_PROP_FRAME_HEIGHT, 480);
+            
+            // Try 720p
+            cvSetCaptureProperty(_m_captures->at(1), CV_CAP_PROP_FRAME_WIDTH, 1280);
+            cvSetCaptureProperty(_m_captures->at(1), CV_CAP_PROP_FRAME_HEIGHT, 720);
+            
+            // Try 1080p
+            cvSetCaptureProperty(_m_captures->at(2), CV_CAP_PROP_FRAME_WIDTH, 1920);
+            cvSetCaptureProperty(_m_captures->at(2), CV_CAP_PROP_FRAME_HEIGHT, 1080);
+            
          }
       }
 
       ~video_capture()
       {
          // Clean up everything
-         cvReleaseCapture(&_m_capture);
+         cvReleaseCapture(&_m_captures->at(0));
+         cvReleaseCapture(&_m_captures->at(1));
+         cvReleaseCapture(&_m_captures->at(2));
          cvDestroyAllWindows();
+         
+         delete _m_captures;
       }
 
    public: // Member Functions
@@ -108,8 +129,25 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
       
          while (!done)
          {
+            if (_m_index == -1)
+            {
+               // Choose the highest resolution
+               
+               _m_index = cvQueryFrame(_m_captures->at(2)) ? 2 : -1;
+               
+               if (_m_index != -1) continue;
+               
+               _m_index = cvQueryFrame(_m_captures->at(0)) ? 1 : -1;
+               
+               if (_m_index != -1) continue;
+               
+               _m_index = cvQueryFrame(_m_captures->at(0)) ? 0 : -1;
+            }
+            
+            if (_m_index == -1) continue;
+            
             // Get the frame
-            frame = cvQueryFrame(_m_capture);
+            frame = cvQueryFrame(_m_captures->at(_m_index));
          
             if (frame)
             {
@@ -119,6 +157,7 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
                if (__Gui)
                {
                   done = _show_default_gui(frame);
+               
                }
             }
          }
@@ -140,7 +179,7 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
       
       }
 
-};
+}; // end of class (video_capture)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
