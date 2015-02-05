@@ -45,7 +45,9 @@
 #include <chrono>
 
 #include "video_capture.hpp"
-#include "eye_constants.hpp"
+//#include "eye_constants.hpp"
+#include "findEyeCenter.h"
+#include "constants.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,12 +75,11 @@ inline void face_detection(IplImage* image)
    #endif
    
    cv::namedWindow("debug_blur", CV_WINDOW_AUTOSIZE);
-   
-
+  
    cv::Mat mat_image(image);
    cv::Mat mat_gray = mat_image;
 
-   //convert to gray scale
+   // Convert to gray scale
    cvtColor(mat_image, mat_gray, CV_BGR2GRAY);
    
    #ifdef DEBUG_FLAG
@@ -120,39 +121,58 @@ inline void face_detection(IplImage* image)
    cv::Rect leftEyeRegion(face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
    cv::Rect rightEyeRegion(face.width - eye_region_width - face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
 
-   // Make a matrix out of the left eye
-   cv::Mat lEyeROI = faceROI_gray(leftEyeRegion);
-   cv::Mat lEyeROI_color = faceROI(leftEyeRegion);
-   
-   #ifdef DEBUG_FLAG
-   
-      cv::imshow("debug_color", lEyeROI_color);
+   //// Make a matrix out of the left eye
+   //cv::Mat lEyeROI = faceROI_gray(leftEyeRegion);
+   //cv::Mat lEyeROI_color = faceROI(leftEyeRegion);
+   //
+   //#ifdef DEBUG_FLAG
+   //
+   //   cv::imshow("debug_color", lEyeROI_color);
 
-   #endif
-   
-   cv::medianBlur(lEyeROI, lEyeROI, 7);
-   
-   //display result
-   cv::imshow("debug_blur", lEyeROI);
+   //#endif
+   //
+   //cv::medianBlur(lEyeROI, lEyeROI, 9);
+   //
+   ////display result
+   //cv::imshow("debug_blur", lEyeROI);
 
-   //apply hough transform
-   std::vector<cv::Vec3f> circles;
-   cv::HoughCircles(lEyeROI, circles, CV_HOUGH_GRADIENT,
-      5,       //accumulator resolution
-      100,      //minimum distance between two circles
-      100,     //canny high threshhold
-      60,      //minimum number of votes
-      0, 200); //min and max radius
+   ////apply hough transform
+   //std::vector<cv::Vec3f> circles;
+   //cv::HoughCircles(lEyeROI, circles, CV_HOUGH_GRADIENT,
+   //   2,       //accumulator resolution
+   //   150,     //minimum distance between two circles
+   //   125,     //canny high threshhold
+   //   75,      //minimum number of votes
+   //   0, 0); //min and max radius
 
-   //draw center of detected circles
-   for (size_t i = 0; i < circles.size(); i++)
-   {
-      //draw points
-      cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-      cv::circle(lEyeROI_color, center, 3, cv::Scalar(0, 255, 0));
-      cv::circle(lEyeROI, center, 3, cv::Scalar(0, 0, 255));
-      cv::imshow("debug_blur", lEyeROI);
-   }
+   ////draw center of detected circles
+   //for (size_t i = 0; i < circles.size(); i++)
+   //{
+   //   //draw points
+   //   cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+   //   cv::circle(lEyeROI_color, center, 3, cv::Scalar(0, 255, 0));
+   //   cv::circle(lEyeROI, center, 3, cv::Scalar(0, 0, 255));
+   //   cv::imshow("debug_blur", lEyeROI);
+   //}
+
+   //~~~~~~~~~EYE LIKE~~~~~~~~~~~
+
+   //-- Find Eye Centers
+   cv::Point leftPupil = findEyeCenter(faceROI_gray, leftEyeRegion, "Left Eye");
+   cv::Point rightPupil = findEyeCenter(faceROI_gray, rightEyeRegion, "Right Eye");
+
+   // change eye centers to face coordinates
+   rightPupil.x += rightEyeRegion.x;
+   rightPupil.y += rightEyeRegion.y;
+   leftPupil.x += leftEyeRegion.x;
+   leftPupil.y += leftEyeRegion.y;
+
+   // draw eye centers
+   circle(faceROI, rightPupil, 3, 1234);
+   circle(faceROI, leftPupil, 3, 1234);
+
+   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
    //-- Draw eye regions (left: green, right: red)
    cv::rectangle(faceROI, leftEyeRegion, cv::Scalar(0, 255, 0));

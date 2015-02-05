@@ -149,9 +149,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\constants.h" />
+    <ClInclude Include="..\..\findEyeCenter.h" />
+    <ClInclude Include="..\..\findEyeCorner.h" />
+    <ClInclude Include="..\..\helpers.h" />
     <ClInclude Include="..\..\video_capture.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\findEyeCenter.cpp" />
+    <ClCompile Include="..\..\findEyeCorner.cpp" />
+    <ClCompile Include="..\..\helpers.cpp" />
     <ClCompile Include="..\..\main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
