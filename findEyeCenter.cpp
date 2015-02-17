@@ -45,14 +45,17 @@ void plotVecField(const cv::Mat &gradientX, const cv::Mat &gradientY, const cv::
 #pragma mark Helpers
 
 cv::Point unscalePoint(cv::Point p, cv::Rect origSize) {
-  float ratio = (((float)kFastEyeWidth)/origSize.width);
+  /*float ratio = (((float)kFastEyeWidth)/origSize.width);
   int x = round(p.x / ratio);
-  int y = round(p.y / ratio);
+  int y = round(p.y / ratio);*/
+  int x = p.x;
+  int y = p.y;
   return cv::Point(x,y);
 }
 
 void scaleToFastSize(const cv::Mat &src,cv::Mat &dst) {
-  cv::resize(src, dst, cv::Size(kFastEyeWidth,(((float)kFastEyeWidth)/src.cols) * src.rows));
+    //cv::resize(src, dst, cv::Size(kFastEyeWidth,(((float)kFastEyeWidth)/src.cols) * src.rows));
+	src.copyTo(dst);
 }
 
 cv::Mat computeMatXGradient(const cv::Mat &mat) {
@@ -75,10 +78,16 @@ cv::Mat computeMatXGradient(const cv::Mat &mat) {
 #pragma mark Main Algorithm
 
 void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out) {
-  // for all possible centers
-  for (int cy = 0; cy < out.rows; ++cy) {
+	//gridsize
+	int gs = 10;
+  // for all possible centers within the grid
+  for (int cy = y-gs; cy < y+gs; ++cy) {
+	  if (cy < 0 || cy > out.rows -1)
+		  continue;
     double *Or = out.ptr<double>(cy);
-    for (int cx = 0; cx < out.cols; ++cx) {
+    for (int cx = x-gs; cx < x+gs; ++cx) {
+		if (cx < 0 || cx > out.cols - 1)
+			continue;
       if (x == cx && y == cy) {
         continue;
       }
@@ -106,7 +115,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   cv::Mat eyeROI;
   scaleToFastSize(eyeROIUnscaled, eyeROI);
   // draw eye region
-  rectangle(face,eye,1234);
+  //rectangle(face,eye,1234);
   //-- Find the gradient
   cv::Mat gradientX = computeMatXGradient(eyeROI);
   cv::Mat gradientY = computeMatXGradient(eyeROI.t()).t();
@@ -133,7 +142,7 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
       }
     }
   }
-  imshow(debugWindow,gradientX);
+  //imshow(debugWindow,gradientX);
   //-- Create a blurred and inverted image for weighting
   cv::Mat weight;
   GaussianBlur( eyeROI, weight, cv::Size( kWeightBlurSize, kWeightBlurSize ), 0, 0 );
@@ -150,11 +159,17 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   // Note: these loops are reversed from the way the paper does them
   // it evaluates every possible center for each gradient location instead of
   // every possible gradient location for every center.
-  printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
-  for (int y = 0; y < weight.rows; ++y) {
+
+  //only search in the inner 50% of the eye ROI to find the eye center..
+  int xStart = weight.cols*0.25;
+  int xEnd = weight.cols*0.75;
+  int yStart = weight.rows*0.25;
+  int yEnd = weight.rows*0.75;
+  //printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
+  for (int y = yStart; y < yEnd; ++y) {
     const unsigned char *Wr = weight.ptr<unsigned char>(y);
     const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
-    for (int x = 0; x < weight.cols; ++x) {
+    for (int x = xStart; x < xEnd; ++x) {
       double gX = Xr[x], gY = Yr[x];
       if (gX == 0.0 && gY == 0.0) {
         continue;

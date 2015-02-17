@@ -27,8 +27,8 @@ Global
 		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|Any CPU.ActiveCfg = Release|Win32
 		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|Mixed Platforms.ActiveCfg = Release|Win32
 		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|Win32.ActiveCfg = Release|Win32
-		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|Win32.Build.0 = Release|Win32
+		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|Win32.ActiveCfg = Release|x64
+		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|Win32.Build.0 = Release|x64
 		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|x64.ActiveCfg = Release|x64
 		{295714C1-ADF7-4621-930E-FDAEE29F4E07}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
