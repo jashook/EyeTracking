@@ -23,10 +23,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
+#include <iostream>
+#include <stdexcept>
 
 #if _WIN32
 
@@ -34,9 +35,8 @@
 
 #include <opencv2\objdetect\objdetect.hpp>
 #include <opencv2\highgui\highgui.hpp>
-#include <opencv2\highgui\highgui_c.h>
-#include <opencv2\imgproc\imgproc_c.h>
 #include <opencv2\imgproc\imgproc.hpp>
+#include <opencv2\videoio.hpp>
 
 #else
 
@@ -44,9 +44,8 @@
 
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/highgui/highgui_c.h>
-#include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/videoio.hpp>
 
 #endif
 
@@ -58,98 +57,84 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Threads = 1> class video_capture
+template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Threads = 1> class video_capture
 {
    private: // Member Variables
 
-      std::size_t _m_index;
-      std::vector<CvCapture*>* _m_captures;
+      cv::VideoCapture _m_capture;
 
    public: // Constructor | Destructor
 
-      video_capture() : _m_index(-1), _m_captures(NULL)
+      video_capture()
       {
-         _m_captures = new std::vector<CvCapture*>();
+         const std::string error_message = "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again.";
+
+         // Set resolution
          
-         bool error = true;
-         
-         for (std::size_t index = 0; index < 3; ++index)
+         // Try 1080p
+         bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
+         bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
+
+         if (!_m_capture.open(-1))
          {
-            // Set up to capture from the first webcam
-            _m_captures->push_back(cvCaptureFromCAM(0));
-            
-            // If the capture is still NULL, then we are unable to read
-            if (_m_captures->at(index))
+            std::cerr << error_message << std::endl;
+         }
+
+         std::cout << _m_capture.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+
+         return;
+
+         // Try 720p
+         width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
+         height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
+
+         if (width && height)
+         {
+            if (!_m_capture.open(0))
             {
-               error = false;
+               std::cerr << error_message << std::endl;
             }
+
+            return;
          }
-         
-         if (error)
+
+         width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+         height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+
+         if (width && height)
          {
-            std::cerr << "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again." << std::endl;
+            if (!_m_capture.open(-1))
+            {
+               std::cerr << error_message << std::endl;
+            }
+
+            return;
          }
-         else
-         {
-            // Set resolution
-            
-            // Try 480p
-            cvSetCaptureProperty(_m_captures->at(0), CV_CAP_PROP_FRAME_WIDTH, 640);
-            cvSetCaptureProperty(_m_captures->at(0), CV_CAP_PROP_FRAME_HEIGHT, 480);
-            
-            // Try 720p
-            cvSetCaptureProperty(_m_captures->at(1), CV_CAP_PROP_FRAME_WIDTH, 1280);
-            cvSetCaptureProperty(_m_captures->at(1), CV_CAP_PROP_FRAME_HEIGHT, 720);
-            
-            // Try 1080p
-            cvSetCaptureProperty(_m_captures->at(2), CV_CAP_PROP_FRAME_WIDTH, 1920);
-            cvSetCaptureProperty(_m_captures->at(2), CV_CAP_PROP_FRAME_HEIGHT, 1080);
-            
-         }
+
+         throw std::runtime_error(error_message);
       }
 
       ~video_capture()
       {
          // Clean up everything
-         cvReleaseCapture(&_m_captures->at(0));
-         cvReleaseCapture(&_m_captures->at(1));
-         cvReleaseCapture(&_m_captures->at(2));
-         cvDestroyAllWindows();
-         
-         delete _m_captures;
+
+         _m_capture.release();
       }
 
    public: // Member Functions
 
       void capture_sync()
       {
-         IplImage* frame = NULL;
+         cv::Mat frame;
       
          bool done = false;
       
          while (!done)
          {
-            if (_m_index == -1)
-            {
-               // Choose the highest resolution
-               
-               _m_index = cvQueryFrame(_m_captures->at(2)) ? 2 : -1;
-               
-               if (_m_index != -1) continue;
-               
-               _m_index = cvQueryFrame(_m_captures->at(0)) ? 1 : -1;
-               
-               if (_m_index != -1) continue;
-               
-               _m_index = cvQueryFrame(_m_captures->at(0)) ? 0 : -1;
-            }
-            
-            if (_m_index == -1) continue;
-            
             // Get the frame
-            frame = cvQueryFrame(_m_captures->at(_m_index));
+            _m_capture >> frame;
          
-            if (frame)
+            if (!frame.empty())
             {
                // Start processing
                done = __ProcessingFunction(frame);
@@ -165,9 +150,9 @@ template<bool(*__ProcessingFunction)(IplImage*), bool __Gui = false, size_t __Th
    
    private: // Private Member functions
 
-      bool _show_default_gui(IplImage* frame)
+      bool _show_default_gui(cv::Mat& frame)
       {
-         cvShowImage("Video", frame);
+         cv::imshow("Video", frame);
       
          // Wait 10 ms for a key to be pressed
          int character = cvWaitKey(10);

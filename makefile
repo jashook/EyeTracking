@@ -1,4 +1,7 @@
+all: debug
+
 debug:
-	g++ *.cpp -std=c++11 -g -lopencv_core -lopencv_highgui -lopencv_objdetect -lopencv_imgproc
+	g++ -g -I eyeLike/src -std=c++11 *.cpp -lopencv_core -lopencv_highgui -lopencv_objdetect -lopencv_imgproc -lopencv_videoio
 release:
-	g++ *.cpp -std=c++11 -O3 -lopencv_core -lopencv_highgui -lopencv_objdetect -lopencv_imgproc
+	g++ -I eyeLike/src -std=c++11 -O3 *.cpp -lopencv_core -lopencv_core -lopencv_objdetect -lopencv_imgproc -lopencv_videoio
+

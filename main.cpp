@@ -33,9 +33,8 @@
 
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/highgui/highgui_c.h>
-#include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/videoio.hpp>
 
 #endif
 
@@ -64,7 +63,7 @@
 // Load Face cascade (.xml file)
 cv::CascadeClassifier face_cascade;
 
-inline void face_detection(IplImage* image)
+inline void face_detection(cv::Mat& image)
 {
    
    #ifdef DEBUG_FLAG
@@ -185,7 +184,7 @@ inline void face_detection(IplImage* image)
    }
 }
 
-inline bool process_frame(IplImage* frame)
+inline bool process_frame(cv::Mat& frame)
 {
    // process the frame here
    
@@ -254,7 +253,7 @@ int main()
       face_cascade.load("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 
    #else
-      face_cascade.load("/Users/jarret/Projects/EyeTracking/haarcascades/haarcascade_frontalface_alt.xml");
+      face_cascade.load("/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_alt.xml");
    
    #endif
    
