@@ -79,10 +79,10 @@ cv::Mat computeMatXGradient(const cv::Mat &mat) {
 
 void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out) {
 	//gridsize
-	int gs = 10;
-  // for all possible centers within the grid
-  for (int cy = y-gs; cy < y+gs; ++cy) {
-	  if (cy < 0 || cy > out.rows -1)
+	int gs = 13;
+	// for all possible centers within the grid
+	for (int cy = y-gs; cy < y+gs; ++cy) {
+		if (cy < 0 || cy > out.rows -1)
 		  continue;
     double *Or = out.ptr<double>(cy);
     for (int cx = x-gs; cx < x+gs; ++cx) {
@@ -166,15 +166,24 @@ cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   int yStart = weight.rows*0.25;
   int yEnd = weight.rows*0.75;
   //printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
+
+  // For every Row
   for (int y = yStart; y < yEnd; ++y) {
+	// Get the Current Row
     const unsigned char *Wr = weight.ptr<unsigned char>(y);
+
+	//Get the Current Row?
     const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
+
+	// For every pixel inside the row
     for (int x = xStart; x < xEnd; ++x) {
-      double gX = Xr[x], gY = Yr[x];
-      if (gX == 0.0 && gY == 0.0) {
+      double gradient_x = Xr[x], gradient_y = Yr[x];
+
+	  if (gradient_x == 0.0 && gradient_y == 0.0) {
         continue;
       }
-      testPossibleCentersFormula(x, y, Wr[x], gX, gY, outSum);
+
+      testPossibleCentersFormula(x, y, Wr[x], gradient_x, gradient_y, outSum);
     }
   }
   // scale all the values down, basically averaging them
