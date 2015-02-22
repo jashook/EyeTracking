@@ -21,10 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Function: computeMatXGradient
 //
-// Notes:
+// Notes: Calculates the x-gradient at each pixel location and returns the result
 //
-// 
-// 
+// Can be multi-threaded, sync in / sync out
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 cv::Mat computeMatXGradient(const cv::Mat &mat) 
@@ -44,6 +44,24 @@ cv::Mat computeMatXGradient(const cv::Mat &mat)
   
   return out;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Function: findEyeCenter
+//
+// Notes: finds the eye center and returns a CV::Point at the location
+// 
+// computes gradients (can be threaded independently of each other for x, y)
+// calculates magnitudes of grads
+// compute gradient threshold
+// normalize the gradients (this is the main loop of the function)
+// create a weight matrix (use blur and inversion to give the pupil/iris a high weight
+// test centers (use gradients to 'vote' at each potential center location
+// post process (flood fill edges (?) and threshold again)
+// choose the center location with the max number of 'votes'
+//
+// the 'outer loop' for threading is here.
+//
+////////////////////////////////////////////////////////////////////////////////
 
 cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
   cv::Mat eyeROIUnscaled = face(eye);

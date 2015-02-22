@@ -18,13 +18,16 @@
     <ClInclude Include="..\..\video_capture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\constants.h">
+    <ClInclude Include="..\..\constants.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\findEyeCenter.h">
+    <ClInclude Include="..\..\eye_constants.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\findEyeCorner.h">
+    <ClInclude Include="..\..\find_eye_center.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\find_eye_corner.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\helpers.h">
@@ -35,13 +38,13 @@
     <ClCompile Include="..\..\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\findEyeCenter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\findEyeCorner.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\helpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\find_eye_center.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\find_eye_corner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
