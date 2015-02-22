@@ -27,129 +27,188 @@
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-cv::Mat computeMatXGradient(const cv::Mat &mat) 
+cv::Mat computeMatXGradient(const cv::Mat& mat) 
 {
-  cv::Mat out(mat.rows, mat.cols,CV_64F);
+   cv::Mat output(mat.rows, mat.cols, CV_64F);
   
-  for (int y = 0; y < mat.rows; ++y) {
-    const uchar *Mr = mat.ptr<uchar>(y);
-    double *Or = out.ptr<double>(y);
-    
-    Or[0] = Mr[1] - Mr[0];
-    for (int x = 1; x < mat.cols - 1; ++x) {
-      Or[x] = (Mr[x+1] - Mr[x-1])/2.0;
-    }
-    Or[mat.cols-1] = Mr[mat.cols-1] - Mr[mat.cols-2];
-  }
+   for (int column_index = 0; column_index < mat.rows; ++column_index) 
+   {
+      const uchar* current_mat_row = mat.ptr<uchar>(column_index);
+      double* output_row = output.ptr<double>(y);
+
+      // Do not average the first index
+      output_row[0] = current_mat_row[1] - current_mat_row[0];
+
+      // Average each index
+      for (int index = 1; index < mat.cols - 1; ++index) 
+      {
+         output[index] = (current_mat_row[index + 1] - current_mat_row[index - 1]) / 2.0;
+      } 
+
+      // Do not average the last index
+      output[mat.cols - 1] = current_mat_row[mat.cols - 1] - current_mat_row[mat.cols - 2];
+   }
   
-  return out;
+   return out;
 }
 
-cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow) {
-  cv::Mat eyeROIUnscaled = face(eye);
-  cv::Mat eyeROI;
-  scaleToFastSize(eyeROIUnscaled, eyeROI);
-  // draw eye region
-  //rectangle(face,eye,1234);
-  //-- Find the gradient
-  cv::Mat gradientX = computeMatXGradient(eyeROI);
-  cv::Mat gradientY = computeMatXGradient(eyeROI.t()).t();
-  //-- Normalize and threshold the gradient
-  // compute all the magnitudes
-  cv::Mat mags = matrixMagnitude(gradientX, gradientY);
-  //compute the threshold
-  double gradientThresh = computeDynamicThreshold(mags, kGradientThreshold);
-  //double gradientThresh = kGradientThreshold;
-  //double gradientThresh = 0;
-  //normalize
-  for (int y = 0; y < eyeROI.rows; ++y) {
-    double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
-    const double *Mr = mags.ptr<double>(y);
-    for (int x = 0; x < eyeROI.cols; ++x) {
-      double gX = Xr[x], gY = Yr[x];
-      double magnitude = Mr[x];
-      if (magnitude > gradientThresh) {
-        Xr[x] = gX/magnitude;
-        Yr[x] = gY/magnitude;
-      } else {
-        Xr[x] = 0.0;
-        Yr[x] = 0.0;
+cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window) 
+{
+   cv::Mat eye_roi;
+   cv::Mat eye_roi_unscaled = face(eye);
+   
+   // We are prefering accuracy over speed at this point
+   // Using threading to combat the performance loss
+   // scaleToFastSize(eye_roi_unscaled, eye_roi);
+
+   // draw eye region
+   // rectangle(face,eye,1234);
+
+   // Find the gradient
+   cv::Mat gradient_x = computeMatXGradient(eye_roi);
+   cv::Mat gradient_y = computeMatXGradient(eye_roi.t()).t();
+
+   // Normalize and threshold the gradient 
+   // and compute all the magnitudes
+   cv::Mat magnitudes = matrixMagnitude(gradient_x, gradient_y);
+   
+   // Compute the threshold
+   double magnitude_threshhold = computeDynamicThreshold(mags, kGradientThreshold);
+   
+   // row_index will start at row 0 to amount of rows (y direction)
+   for (int row_index = 0; column_index < eye_roi.rows; ++row_index) 
+   {
+      double* gradient_x = gradient_x.ptr<double>(row_index);
+      double* gradient_y = gradientY.ptr<double>(row_index);
+      
+      const double* magnitude_row = magnitudes.ptr<double>(y);
+
+      for (int column_index = 0; column_index < eye_roi.cols; ++column_index) 
+      {
+         register double gradient_x_at_column = Xr[column_index];
+         register double gradient_y_at_column = Yr[column_index];
+
+         register double magnitude = magnitude_row[column_index];
+
+         if (magnitude > magnitude_threshhold) 
+         {
+            gradient_x[column_index] = gradient_x_at_column / magnitude;
+            gradient_y[column] = gradient_y_at_column / magnitude;
+         }
+      
+         else 
+         {
+            gradient_x[column_index] = 0.0;
+            gradient_y[column_index] = 0.0;
+         }
       }
-    }
-  }
-  //imshow(debugWindow,gradientX);
-  //-- Create a blurred and inverted image for weighting
-  cv::Mat weight;
-  GaussianBlur( eyeROI, weight, cv::Size( kWeightBlurSize, kWeightBlurSize ), 0, 0 );
-  for (int y = 0; y < weight.rows; ++y) {
-    unsigned char *row = weight.ptr<unsigned char>(y);
-    for (int x = 0; x < weight.cols; ++x) {
-      row[x] = (255 - row[x]);
-    }
-  }
-  //imshow(debugWindow,weight);
-  //-- Run the algorithm!
-  cv::Mat outSum = cv::Mat::zeros(eyeROI.rows,eyeROI.cols,CV_64F);
-  // for each possible gradient location
-  // Note: these loops are reversed from the way the paper does them
-  // it evaluates every possible center for each gradient location instead of
-  // every possible gradient location for every center.
+   }
 
-  //only search in the inner 50% of the eye ROI to find the eye center..
-  int xStart = weight.cols*0.25;
-  int xEnd = weight.cols*0.75;
-  int yStart = weight.rows*0.25;
-  int yEnd = weight.rows*0.75;
-  //printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
+   // imshow(debug_window,gradient_x);
 
-  // For every Row
-  for (int y = yStart; y < yEnd; ++y) {
-	// Get the Current Row
-    const unsigned char *Wr = weight.ptr<unsigned char>(y);
+   // -- Create a blurred and inverted image for weighting
+   cv::Mat weight;
 
-	//Get the Current Row?
-    const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
+   GaussianBlur(eye_roi, weight, cv::Size(kWeightBlurSize, kWeightBlurSize), 0, 0);
 
-	// For every pixel inside the row
-    for (int x = xStart; x < xEnd; ++x) {
-      double gradient_x = Xr[x], gradient_y = Yr[x];
+   // Invert at every index
+   for (int row_index = 0; row_index < weight.rows; ++row_index) 
+   {
+      unsigned char* current_row = weight.ptr<unsigned char>(row_index);
 
-	  if (gradient_x == 0.0 && gradient_y == 0.0) {
-        continue;
+      for (int column_index = 0; column_index < weight.cols; ++column_index) 
+      {
+         current_row[column_index] = (255 - current_row[column_index]);
       }
 
-      testPossibleCentersFormula(x, y, Wr[x], gradient_x, gradient_y, outSum);
-    }
-  }
-  // scale all the values down, basically averaging them
-  double numGradients = (weight.rows*weight.cols);
-  cv::Mat out;
-  outSum.convertTo(out, CV_32F,1.0/numGradients);
-  //imshow(debugWindow,out);
-  //-- Find the maximum point
-  cv::Point maxP;
-  double maxVal;
-  cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP);
-  //-- Flood fill the edges
-  if(kEnablePostProcess) {
-    cv::Mat floodClone;
-    //double floodThresh = computeDynamicThreshold(out, 1.5);
-    double floodThresh = maxVal * kPostProcessThreshold;
-    cv::threshold(out, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
-    if(kPlotVectorField) {
-      //plotVecField(gradientX, gradientY, floodClone);
-      imwrite("eyeFrame.png",eyeROIUnscaled);
-    }
-    cv::Mat mask = floodKillEdges(floodClone);
-    //imshow(debugWindow + " Mask",mask);
-    //imshow(debugWindow,out);
-    // redo max
-    cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
-  }
-  return unscalePoint(maxP,eye);
+   }
+
+   // imshow(debug_window, weight);
+
+   // Run the algorithm!
+   cv::Mat output_sum = cv::Mat::zeros(eye_roi.rows, eye_roi.cols, CV_64F);
+
+   // For each possible gradient location
+   // Note: these loops are reversed from the way the paper does them
+   // it evaluates every possible center for each gradient location instead of
+   // every possible gradient location for every center.
+
+   // Only search in the inner 50% of the eye roi to find the eye center..
+
+   static int column_start = weight.cols * 0.25;
+   static int column_end = weight.cols * 0.75;
+
+   static int row_start = weight.rows * 0.25;
+   static int row_end = weight.rows * 0.75;
+
+   // printf("Eye Size: %ix%i\n", outSum.cols, outSum.rows);
+   
+   // For every row
+   for (int current_row_index = row_start; current_row_index < row_end; ++current_row_index) 
+   {
+	   // Get the Current Row
+      const unsigned char* current_weight_row = weight.ptr<unsigned char>(current_row_index);
+
+      const double* gradient_row_x_direction = gradientX.ptr<double>(current_row_index);
+      const double* gradient_row_y_direction = gradientY.ptr<double>(current_row_index);
+
+	   // For every pixel inside the row
+      for (int current_column_index = column_start; current_column_index < column_end; ++current_column_index) 
+      {
+         double gradient_x = gradient_row_x_direction[current_column_index]; 
+         double gradient_y = gradient_row_y_direction[current_column_index];
+
+	      if (gradient_x == 0.0 && gradient_y == 0.0) 
+         {
+            continue;
+         }
+
+         testPossibleCentersFormula(x, y, current_weight_row[x], gradient_x, gradient_y, output_sum);
+      }
+   }
+
+   // Scale all the values down, basically averaging them
+
+   double numGradients = (weight.rows*weight.cols);
+
+   cv::Mat output;
+   output_sum.convertTo(out, CV_32F, 1.0 / numGradients);
+
+   // imshow(debug_window, out);
+
+   //-- Find the maximum point
+   cv::Point max_p;
+   double max_val;
+   cv::minMaxLoc(output, NULL, &max_val, NULL, &max_p);
+
+   //-- Flood fill the edges
+   if (kEnablePostProcess) 
+   {
+      cv::Mat floodClone;
+      //double floodThresh = computeDynamicThreshold(out, 1.5);
+
+      double floodThresh = maxVal * kPostProcessThreshold;
+      cv::threshold(out, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
+      
+      if(kPlotVectorField) 
+      {
+         //plotVecField(gradientX, gradientY, floodClone);
+         imwrite("eyeFrame.png",eyeROIUnscaled);
+      }
+
+      cv::Mat mask = floodKillEdges(floodClone);
+
+      //imshow(debugWindow + " Mask",mask);
+      //imshow(debugWindow,out);
+      // redo max
+
+      cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
+
+   }
+
+   return unscalePoint(max_p,eye);
+
 }
-
-#pragma mark Postprocessing
 
 bool floodShouldPushPoint(const cv::Point &np, const cv::Mat &mat) {
   return inMat(np, mat.rows, mat.cols);
