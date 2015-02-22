@@ -68,13 +68,15 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
       {
          const std::string error_message = "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again.";
 
+         _m_capture.open(-1);
+
          // Set resolution
          
          // Try 1080p
          bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
          bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
 
-         if (!_m_capture.open(-1))
+         if (width && height)
          {
             std::cerr << error_message << std::endl;
          }
