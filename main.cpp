@@ -69,10 +69,10 @@ inline void face_detection(cv::Mat& image)
 
       cv::namedWindow("debug_gray", CV_WINDOW_AUTOSIZE);
       cv::namedWindow("debug_color", CV_WINDOW_AUTOSIZE);
-   
+	  cv::namedWindow("debug_blur", CV_WINDOW_AUTOSIZE);
    #endif
    
-   cv::namedWindow("debug_blur", CV_WINDOW_AUTOSIZE);
+   
   
    cv::Mat mat_image(image);
    cv::Mat mat_gray = mat_image;
@@ -90,15 +90,7 @@ inline void face_detection(cv::Mat& image)
    // Detect faces
    std::vector<cv::Rect> objects;
 
-   std::chrono::time_point<std::chrono::system_clock> start, end;
-
-   start = std::chrono::system_clock::now();
-   face_cascade.detectMultiScale(mat_gray, objects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE | CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(75, 75));
-   end = std::chrono::system_clock::now();
-
-   // Print the time processing took
-   std::chrono::duration<double> elapsed_seconds = end - start;
-   std::cout << elapsed_seconds.count() << std::endl;
+   face_cascade.detectMultiScale(mat_gray, objects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE | CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(300, 300));
 
    // Check to see that faces were found - if not, return
    if (objects.size() < 1)
@@ -166,8 +158,8 @@ inline void face_detection(cv::Mat& image)
    leftPupil.y += leftEyeRegion.y;
 
    // draw eye centers
-   circle(faceROI, rightPupil, 3, 1234);
-   circle(faceROI, leftPupil, 3, 1234);
+   circle(faceROI, rightPupil, 3, cv::Scalar(0, 255, 0));
+   circle(faceROI, leftPupil, 3, cv::Scalar(0, 255, 0));
 
    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -186,9 +178,19 @@ inline void face_detection(cv::Mat& image)
 inline bool process_frame(cv::Mat& frame)
 {
    // process the frame here
+
+	//define timing vars
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+
+	start = std::chrono::system_clock::now();
+	// Look for Face
+	face_detection(frame);
+	end = std::chrono::system_clock::now();
+
+	// Print the time processing took
+	std::chrono::duration<double> elapsed_seconds = end - start;
+	std::cout << "fps: " << 1/elapsed_seconds.count() << std::endl;
    
-   // Look for Face
-   face_detection(frame);
    
    // Not finished
    return false;
@@ -211,15 +213,19 @@ inline void hough_test()
    cvtColor(src, src_gray, CV_BGR2GRAY);
    
    // Display the Grayscale Image
+#ifdef DEBUG_FLAG
    cv::namedWindow("gray");
    imshow("gray", src_gray);
+#endif
    
    // Blur (median filter for speed)
    medianBlur(src_gray, src_gray, 21);
    
    // Display blur
+#ifdef DEBUG_FLAG
    cv::namedWindow("gray_blur");
    imshow("gray_blur", src_gray);
+#endif
    
    // Hough transform
    std::vector<cv::Vec3f> circles;
