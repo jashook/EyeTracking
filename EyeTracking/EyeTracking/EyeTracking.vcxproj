@@ -154,15 +154,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\constants.h" />
-    <ClInclude Include="..\..\findEyeCenter.h" />
-    <ClInclude Include="..\..\findEyeCorner.h" />
+    <ClInclude Include="..\..\constants.hpp" />
+    <ClInclude Include="..\..\eye_constants.hpp" />
+    <ClInclude Include="..\..\find_eye_center.hpp" />
+    <ClInclude Include="..\..\find_eye_corner.hpp" />
     <ClInclude Include="..\..\helpers.h" />
     <ClInclude Include="..\..\video_capture.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\findEyeCenter.cpp" />
-    <ClCompile Include="..\..\findEyeCorner.cpp" />
+    <ClCompile Include="..\..\find_eye_center.cpp" />
+    <ClCompile Include="..\..\find_eye_corner.cpp" />
     <ClCompile Include="..\..\helpers.cpp" />
     <ClCompile Include="..\..\main.cpp" />
   </ItemGroup>
