@@ -34,7 +34,7 @@ cv::Mat computeMatXGradient(const cv::Mat& mat)
    for (int column_index = 0; column_index < mat.rows; ++column_index) 
    {
       const uchar* current_mat_row = mat.ptr<uchar>(column_index);
-      double* output_row = output.ptr<double>(y);
+      double* output_row = output.ptr<double>(column_index);
 
       // Do not average the first index
       output_row[0] = current_mat_row[1] - current_mat_row[0];
@@ -42,14 +42,14 @@ cv::Mat computeMatXGradient(const cv::Mat& mat)
       // Average each index
       for (int index = 1; index < mat.cols - 1; ++index) 
       {
-         output[index] = (current_mat_row[index + 1] - current_mat_row[index - 1]) / 2.0;
+         output_row[index] = (current_mat_row[index + 1] - current_mat_row[index - 1]) / 2.0;
       } 
 
       // Do not average the last index
-      output[mat.cols - 1] = current_mat_row[mat.cols - 1] - current_mat_row[mat.cols - 2];
+      output_row[mat.cols - 1] = current_mat_row[mat.cols - 1] - current_mat_row[mat.cols - 2];
    }
   
-   return out;
+   return output;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window)
    cv::Mat magnitudes = matrixMagnitude(gradient_x, gradient_y);
    
    // Compute the threshold
-   double magnitude_threshhold = computeDynamicThreshold(mags, kGradientThreshold);
+   double magnitude_threshhold = computeDynamicThreshold(magnitudes, kGradientThreshold);
    
    // row_index will start at row 0 to amount of rows (y direction)
    for (int row_index = 0; column_index < eye_roi.rows; ++row_index) 
