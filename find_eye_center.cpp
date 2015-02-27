@@ -70,7 +70,7 @@ cv::Mat computeMatXGradient(const cv::Mat& mat)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window) 
+cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_window) 
 {
    cv::Mat eye_roi;
    cv::Mat eye_roi_unscaled = face(eye);
@@ -94,30 +94,30 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window)
    double magnitude_threshhold = computeDynamicThreshold(magnitudes, kGradientThreshold);
    
    // row_index will start at row 0 to amount of rows (y direction)
-   for (int row_index = 0; column_index < eye_roi.rows; ++row_index) 
+   for (int row_index = 0; row_index < eye_roi.rows; ++row_index) 
    {
-      double* gradient_x = gradient_x.ptr<double>(row_index);
-      double* gradient_y = gradientY.ptr<double>(row_index);
+      double* gradient_row = gradient_x.ptr<double>(row_index);
+      double* gradient_column = gradient_y.ptr<double>(row_index);
       
-      const double* magnitude_row = magnitudes.ptr<double>(y);
+      const double* magnitude_row = magnitudes.ptr<double>(row_index);
 
       for (int column_index = 0; column_index < eye_roi.cols; ++column_index) 
       {
-         register double gradient_x_at_column = Xr[column_index];
-         register double gradient_y_at_column = Yr[column_index];
+         register double gradient_x_at_column = gradient_row[column_index];
+         register double gradient_y_at_column = gradient_column[column_index];
 
          register double magnitude = magnitude_row[column_index];
 
          if (magnitude > magnitude_threshhold) 
          {
-            gradient_x[column_index] = gradient_x_at_column / magnitude;
-            gradient_y[column] = gradient_y_at_column / magnitude;
+            gradient_row[column_index] = gradient_x_at_column / magnitude;
+            gradient_column[column_index] = gradient_y_at_column / magnitude;
          }
       
          else 
          {
-            gradient_x[column_index] = 0.0;
-            gradient_y[column_index] = 0.0;
+            gradient_row[column_index] = 0.0;
+            gradient_column[column_index] = 0.0;
          }
      }
 
@@ -168,8 +168,8 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window)
 	   // Get the Current Row
       const unsigned char* current_weight_row = weight.ptr<unsigned char>(current_row_index);
 
-      const double* gradient_row_x_direction = gradientX.ptr<double>(current_row_index);
-      const double* gradient_row_y_direction = gradientY.ptr<double>(current_row_index);
+      const double* gradient_row_x_direction = gradient_x.ptr<double>(current_row_index);
+      const double* gradient_row_y_direction = gradient_y.ptr<double>(current_row_index);
 
 	   // For every pixel inside the row
       for (int current_column_index = column_start; current_column_index < column_end; ++current_column_index) 
@@ -182,7 +182,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window)
             continue;
          }
 
-         testPossibleCentersFormula(x, y, current_weight_row[x], gradient_x, gradient_y, output_sum);
+         testPossibleCentersFormula(current_column_index, current_row_index, current_weight_row[current_column_index], gradient_x, gradient_y, output_sum);
       }
    }
 
@@ -191,7 +191,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window)
    double numGradients = (weight.rows*weight.cols);
 
    cv::Mat output;
-   output_sum.convertTo(out, CV_32F, 1.0 / numGradients);
+   output_sum.convertTo(output, CV_32F, 1.0 / numGradients);
 
    // imshow(debug_window, out);
 
@@ -206,13 +206,13 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window)
       cv::Mat floodClone;
       //double floodThresh = computeDynamicThreshold(out, 1.5);
 
-      double floodThresh = maxVal * kPostProcessThreshold;
-      cv::threshold(out, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
+      double floodThresh = max_val * kPostProcessThreshold;
+      cv::threshold(output, floodClone, floodThresh, 0.0f, cv::THRESH_TOZERO);
       
       if(kPlotVectorField) 
       {
          //plotVecField(gradientX, gradientY, floodClone);
-         imwrite("eyeFrame.png",eyeROIUnscaled);
+         cv::imwrite("eyeFrame.png",eye_roi_unscaled);
       }
 
       cv::Mat mask = floodKillEdges(floodClone);
@@ -221,7 +221,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window)
       //imshow(debugWindow,out);
       // redo max
 
-      cv::minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
+      cv::minMaxLoc(output, NULL, &max_val, NULL, &max_p, mask);
 
    }
 
@@ -229,7 +229,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, std::string& debug_window)
 
 }
 
-bool floodShouldPushPoint(const cv::Point &np, const cv::Mat &mat) {
+bool floodShouldPushPoint(cv::Point& np, cv::Mat &mat) {
   return inMat(np, mat.rows, mat.cols);
 }
 
@@ -263,10 +263,10 @@ cv::Mat floodKillEdges(cv::Mat &mat) {
 
 }
 
-void plotVecField(const cv::Mat &gradientX, const cv::Mat &gradientY, const cv::Mat &img) {
-  mglData *xData = matToData<double>(gradientX);
-  mglData *yData = matToData<double>(gradientY);
-  mglData *imgData = matToData<float>(img);
+/*void plotVecField(const cv::Mat &gradientX, const cv::Mat &gradientY, const cv::Mat &img) {
+  mglData* xData = matToData<double>(gradientX);
+  mglData* yData = matToData<double>(gradientY);
+  mglData* imgData = matToData<float>(img);
   
   mglGraph gr(0,gradientX.cols * 20, gradientY.rows * 20);
   gr.Vect(*xData, *yData);
@@ -277,7 +277,7 @@ void plotVecField(const cv::Mat &gradientX, const cv::Mat &gradientY, const cv::
   delete yData;
   delete imgData;
 
-}
+}*/
 
 void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out) {
 	//gridsize

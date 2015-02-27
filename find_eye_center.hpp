@@ -40,10 +40,12 @@ extern cv::Mat* rightCornerKernel;
 ////////////////////////////////////////////////////////////////////////////////
 
 cv::Mat computeMatXGradient(const cv::Mat& mat);
-cv::Point findEyeCenter(cv::Mat face, cv::Rect eye, std::string debugWindow);
+cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debugWindow);
 cv::Mat floodKillEdges(cv::Mat& mat);
-bool floodShouldPushPoint(const cv::Point& np, const cv::Mat& mat);
-void plotVecField(const cv::Mat& gradientX, const cv::Mat& gradientY, const cv::Mat& img);
+bool floodShouldPushPoint(cv::Point& np, cv::Mat& mat);
+//void plotVecField(const cv::Mat& gradientX, const cv::Mat& gradientY, const cv::Mat& img);
+void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out);
+cv::Point unscalePoint(cv::Point p, cv::Rect origSize);
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
