@@ -63,27 +63,20 @@ cv::CascadeClassifier face_cascade;
 
 inline void face_detection(cv::Mat& image)
 {
-   
    #ifdef DEBUG_FLAG
-
       cv::namedWindow("debug_gray", CV_WINDOW_AUTOSIZE);
       cv::namedWindow("debug_color", CV_WINDOW_AUTOSIZE);
-	  cv::namedWindow("debug_blur", CV_WINDOW_AUTOSIZE);
+      cv::namedWindow("debug_blur", CV_WINDOW_AUTOSIZE);
    #endif
-   
-   
   
-   cv::Mat mat_image(image);
-   cv::Mat mat_gray = mat_image;
+   cv::Mat mat_gray = image;
 
    // Convert to gray scale
-   cvtColor(mat_image, mat_gray, CV_BGR2GRAY);
+   cvtColor(image, mat_gray, CV_BGR2GRAY);
    
    #ifdef DEBUG_FLAG
-   
       cv::imshow("debug_gray", mat_gray);
-      cv::imshow("debug_color", mat_image);
-   
+      cv::imshow("debug_color", image);
    #endif
 
    // Detect faces
@@ -100,78 +93,48 @@ inline void face_detection(cv::Mat& image)
    // Find eye regions (numbers included from constants.h)
    cv::Rect face = objects[0];
    
-   cv::Mat faceROI_gray = mat_gray(face);
-   cv::Mat faceROI = mat_image(face);
+   cv::Mat face_roi_gray = mat_gray(face);
+   cv::Mat face_roi = image(face);
    
    int eye_region_width = face.width * (kEyePercentWidth / 100.0);
    int eye_region_height = face.width * (kEyePercentHeight / 100.0);
    int eye_region_top = face.height * (kEyePercentTop / 100.0);
    
-   cv::Rect leftEyeRegion(face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
-   cv::Rect rightEyeRegion(face.width - eye_region_width - face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
+   cv::Rect left_eye_region(face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
 
-   //// Make a matrix out of the left eye
-   //cv::Mat lEyeROI = faceROI_gray(leftEyeRegion);
-   //cv::Mat lEyeROI_color = faceROI(leftEyeRegion);
-   //
-   //#ifdef DEBUG_FLAG
-   //
-   //   cv::imshow("debug_color", lEyeROI_color);
+   cv::Rect right_eye_region(face.width - eye_region_width - face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
 
-   //#endif
-   //
-   //cv::medianBlur(lEyeROI, lEyeROI, 9);
-   //
-   ////display result
-   //cv::imshow("debug_blur", lEyeROI);
-
-   ////apply hough transform
-   //std::vector<cv::Vec3f> circles;
-   //cv::HoughCircles(lEyeROI, circles, CV_HOUGH_GRADIENT,
-   //   2,       //accumulator resolution
-   //   150,     //minimum distance between two circles
-   //   125,     //canny high threshhold
-   //   75,      //minimum number of votes
-   //   0, 0); //min and max radius
-
-   ////draw center of detected circles
-   //for (size_t i = 0; i < circles.size(); i++)
-   //{
-   //   //draw points
-   //   cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-   //   cv::circle(lEyeROI_color, center, 3, cv::Scalar(0, 255, 0));
-   //   cv::circle(lEyeROI, center, 3, cv::Scalar(0, 0, 255));
-   //   cv::imshow("debug_blur", lEyeROI);
-   //}
-
-   //~~~~~~~~~EYE LIKE~~~~~~~~~~~
+   /////////////////////////////////////////////////////////////////////////////
+   // EYE LIKE
+   /////////////////////////////////////////////////////////////////////////////
 
    //-- Find Eye Centers
-   cv::Point leftPupil = findEyeCenter(faceROI_gray, leftEyeRegion, "Left Eye");
-   cv::Point rightPupil = findEyeCenter(faceROI_gray, rightEyeRegion, "Right Eye");
+   cv::Point leftPupil = findEyeCenter(face_roi_gray, left_eye_region, "Left Eye");
+   cv::Point rightPupil = findEyeCenter(face_roi_gray, right_eye_region, "Right Eye");
 
    // change eye centers to face coordinates
-   rightPupil.x += rightEyeRegion.x;
-   rightPupil.y += rightEyeRegion.y;
-   leftPupil.x += leftEyeRegion.x;
-   leftPupil.y += leftEyeRegion.y;
+   rightPupil.x += right_eye_region.x;
+   rightPupil.y += right_eye_region.y;
+   leftPupil.x += left_eye_region.x;
+   leftPupil.y += left_eye_region.y;
 
    // draw eye centers
-   circle(faceROI, rightPupil, 3, cv::Scalar(0, 255, 0));
-   circle(faceROI, leftPupil, 3, cv::Scalar(0, 255, 0));
+   circle(face_roi, rightPupil, 3, cv::Scalar(0, 255, 0));
+   circle(face_roi, leftPupil, 3, cv::Scalar(0, 255, 0));
 
-   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-   //-- Draw eye regions (left: green, right: red)
-   cv::rectangle(faceROI, leftEyeRegion, cv::Scalar(0, 255, 0));
-   cv::rectangle(faceROI, rightEyeRegion, cv::Scalar(0, 0, 255));
+   /////////////////////////////////////////////////////////////////////////////
+   // Draw eye regions (left: green, right: red)
+   /////////////////////////////////////////////////////////////////////////////
+   
+   cv::rectangle(face_roi, left_eye_region, cv::Scalar(0, 255, 0));
+   cv::rectangle(face_roi, right_eye_region, cv::Scalar(0, 0, 255));
    
    // Print all the objects detected
    for (int i = 0; i < objects.size(); i++)
    {
-      cv::rectangle(mat_image, objects[i], cv::Scalar( 255, 0, 0 ));
+      cv::rectangle(image, objects[i], cv::Scalar( 255, 0, 0 ));
    }
+
 }
 
 inline bool process_frame(cv::Mat& frame)
