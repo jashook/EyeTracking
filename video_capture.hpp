@@ -78,12 +78,15 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
          if (width && height)
          {
-            std::cerr << error_message << std::endl;
+            if (!_m_capture.open(0))
+            {
+               std::cerr << error_message << std::endl;
+            }
+
+            return;
          }
 
          std::cout << _m_capture.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
-
-         return;
 
          // Try 720p
          width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
@@ -112,7 +115,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
             return;
          }
 
-         throw std::runtime_error(error_message);
+         std::cerr << "Unable to set the frame width and height, defaulting to the standard resolution" << std::endl;
       }
 
       ~video_capture()
