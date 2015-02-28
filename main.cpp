@@ -79,12 +79,6 @@ inline void face_detection(cv::Mat& image)
       cv::imshow("debug_color", image);
    #endif
 
-		//set locale?
-		setlocale(0, "");
-	//display image
-	cv::namedWindow("Video", CV_WINDOW_AUTOSIZE);
-	cv::imshow("Video", image);
-
    // Detect faces
    std::vector<cv::Rect> faces;
 
@@ -142,14 +136,6 @@ inline void face_detection(cv::Mat& image)
    {
       cv::rectangle(image, faces[i], cv::Scalar( 255, 0, 0 ));
    }
-
-	//display image
-	imshow("Video", image);
-	// Wait 10 ms for a key to be pressed
-	int character = cvWaitKey(10);
-
-	// Break if the esc key is pressed
-	if (character == ESC_KEY) return;
 }
 
 inline bool process_frame(cv::Mat& frame)
@@ -173,60 +159,6 @@ inline bool process_frame(cv::Mat& frame)
    return false;
 }
 
-inline void hough_test()
-{
-   // Load image (test eye image located in resources)
-   cv::Mat src, src_gray;
-   
-   // Read image
-   src = cv::imread("eye.jpg", CV_LOAD_IMAGE_COLOR);
-   
-   // Display image
-   cv::namedWindow("color", cv::WINDOW_AUTOSIZE);
-   imshow("color", src);
-
-   // Proceess image
-   // Convert to Grayscale
-   cvtColor(src, src_gray, CV_BGR2GRAY);
-   
-   // Display the Grayscale Image
-#ifdef DEBUG_FLAG
-   cv::namedWindow("gray");
-   imshow("gray", src_gray);
-#endif
-   
-   // Blur (median filter for speed)
-   medianBlur(src_gray, src_gray, 21);
-   
-   // Display blur
-#ifdef DEBUG_FLAG
-   cv::namedWindow("gray_blur");
-   imshow("gray_blur", src_gray);
-#endif
-   
-   // Hough transform
-   std::vector<cv::Vec3f> circles;
-   HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 2, src_gray.rows / 8, 100, 100, 0, 500);
-   
-   // Draw circles
-   for (size_t i = 0; i < circles.size(); i++)
-   {
-      cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-      int radius = cvRound(circles[i][2]);
-      // Draw center
-      
-      circle(src, center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
-      
-      // Draw seg circle
-      circle(src, center, radius, cv::Scalar(0, 0, 255), 3, 8, 0);
-   }
-   
-   imshow("color", src);
-
-   // Pause before return
-   cv::waitKey(0);
-}
-
 int main()
 {
    // Absolute Paths for now
@@ -239,11 +171,10 @@ int main()
    
    #endif
    
-   video_capture<process_frame, false> input;
+   video_capture<process_frame, true> input;
 
    input.capture_sync();
 
-   //hough_test();
    return 0;
 
 }
