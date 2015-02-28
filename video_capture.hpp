@@ -115,7 +115,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
             return;
          }
 
-         throw std::runtime_error(error_message);
+         std::cerr << "Unable to set the frame width and height, defaulting to the standard resolution" << std::endl;
       }
 
       ~video_capture()
