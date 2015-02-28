@@ -77,7 +77,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    
    // We are prefering accuracy over speed at this point
    // Using threading to combat the performance loss
-   // scaleToFastSize(eye_roi_unscaled, eye_roi);
+   scaleToFastSize(eye_roi_unscaled, eye_roi);
 
    // draw eye region
    // rectangle(face,eye,1234);

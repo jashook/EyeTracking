@@ -68,7 +68,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
       {
          const std::string error_message = "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again.";
 
-         _m_capture.open(-1);
+         _m_capture.open(0);
 
          // Set resolution
          
@@ -123,6 +123,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
          // Clean up everything
 
          _m_capture.release();
+		 cvDestroyWindow("Video");
       }
 
    public: // Member Functions
@@ -156,6 +157,12 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
       bool _show_default_gui(cv::Mat& frame)
       {
+		  //TODO - FIND THE ERROR.
+		  /*right now, if you run with the code set to use this function, it opens a bunch of windows with giberish names, when it should be
+			putting all the frames into the "Video" window instead.
+			In addition, having the video display in here is probably a good idea, but we are going to have to figure out how to print the face box, eye box
+			and eye centers on the frame. (referece main.face_detection() to see how it is working now*/
+			cv::namedWindow("Video");
          cv::imshow("Video", frame);
       
          // Wait 10 ms for a key to be pressed

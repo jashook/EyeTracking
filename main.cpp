@@ -79,19 +79,27 @@ inline void face_detection(cv::Mat& image)
       cv::imshow("debug_color", image);
    #endif
 
-   // Detect faces
-   std::vector<cv::Rect> objects;
+		//set locale?
+		setlocale(0, "");
+	//display image
+	cv::namedWindow("Video", CV_WINDOW_AUTOSIZE);
+	cv::imshow("Video", image);
 
-   face_cascade.detectMultiScale(mat_gray, objects, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE | CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(300, 300));
+   // Detect faces
+   std::vector<cv::Rect> faces;
+
+	//dynamically scale min object size by the width of the image (hueristically determined to be imgWidth / 4)  ((hueristically is a cool word for made up))
+	int minObjectSize = image.cols / 4;
+   face_cascade.detectMultiScale(mat_gray, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE | CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(minObjectSize, minObjectSize));
 
    // Check to see that faces were found - if not, return
-   if (objects.size() < 1)
+   if (faces.size() < 1)
    {
       return;
    }
       
-   // Find eye regions (numbers included from constants.h)
-   cv::Rect face = objects[0];
+   // Find eye regions (numbers included from constants.h) (only use the first face)
+   cv::Rect face = faces[0];
    
    cv::Mat face_roi_gray = mat_gray(face);
    cv::Mat face_roi = image(face);
@@ -130,11 +138,18 @@ inline void face_detection(cv::Mat& image)
    cv::rectangle(face_roi, right_eye_region, cv::Scalar(0, 0, 255));
    
    // Print all the objects detected
-   for (int i = 0; i < objects.size(); i++)
+   for (int i = 0; i < faces.size(); i++)
    {
-      cv::rectangle(image, objects[i], cv::Scalar( 255, 0, 0 ));
+      cv::rectangle(image, faces[i], cv::Scalar( 255, 0, 0 ));
    }
 
+	//display image
+	imshow("Video", image);
+	// Wait 10 ms for a key to be pressed
+	int character = cvWaitKey(10);
+
+	// Break if the esc key is pressed
+	if (character == ESC_KEY) return;
 }
 
 inline bool process_frame(cv::Mat& frame)
@@ -224,7 +239,7 @@ int main()
    
    #endif
    
-   video_capture<process_frame, true> input;
+   video_capture<process_frame, false> input;
 
    input.capture_sync();
 
