@@ -94,7 +94,7 @@ inline void face_detection(cv::Mat& image)
       
    // Find eye regions (numbers included from constants.h) (only use the first face)
    cv::Rect face = faces[0];
-   
+
    cv::Mat face_roi_gray = mat_gray(face);
    cv::Mat face_roi = image(face);
    

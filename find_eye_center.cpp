@@ -154,11 +154,11 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
 
    // Only search in the inner 50% of the eye roi to find the eye center..
 
-   static int column_start = weight.cols * 0.25;
-   static int column_end = weight.cols * 0.75;
+    const int column_start = weight.cols * 0.25;
+    const int column_end = weight.cols * 0.75;
 
-   static int row_start = weight.rows * 0.25;
-   static int row_end = weight.rows * 0.75;
+    const int row_start = weight.rows * 0.25;
+    const int row_end = weight.rows * 0.75;
 
    // printf("Eye Size: %ix%i\n", outSum.cols, outSum.rows);
    
