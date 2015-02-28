@@ -76,7 +76,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
          bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
          bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
 
-         if (!width && !height)
+         if (width && height)
          {
             if (!_m_capture.open(0))
             {
