@@ -140,20 +140,23 @@ inline void face_detection(cv::Mat& image)
 
 inline bool process_frame(cv::Mat& frame)
 {
-   // process the frame here
-
 	//define timing vars
 	std::chrono::time_point<std::chrono::system_clock> start, end;
+   // process the frame here
 
-	start = std::chrono::system_clock::now();
 	// Look for Face
+	//record start time for processing frame
+	start = std::chrono::system_clock::now();
 	face_detection(frame);
 	end = std::chrono::system_clock::now();
 
-	// Print the time processing took
+	// Print the time processing taken (math only)
 	std::chrono::duration<double> elapsed_seconds = end - start;
-	std::cout << "fps: " << 1/elapsed_seconds.count() << std::endl;
-   
+#ifdef FPS_TIMING
+	std::cout << "allMath/sec: " << 1 / elapsed_seconds.count() << "\t";
+#else
+	std::cout << "allMath/sec: " << 1 / elapsed_seconds.count() << "\r";
+#endif
    
    // Not finished
    return false;
