@@ -89,7 +89,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
          // Set resolution
 
          // Try 1080p
-         bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
+			bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
          bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
 
 			//TODO - find why (even though the set function returns true) the get value returns the default.
@@ -185,7 +185,6 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
 				// Get the frame
             _m_capture >> frame;
-
             if (!frame.empty())
             {
                // Start processing
