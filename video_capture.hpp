@@ -72,7 +72,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 {
    private: // Member Variables
 
-      cv::VideoCapture _m_capture;
+   cv::VideoCapture _m_capture;
 
    public: // Constructor | Destructor
 
@@ -84,10 +84,10 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
          _m_capture.open(0);
 
 			//initilize window for video feed
-			cv::namedWindow("Video");
+			cv::namedWindow("Video", CV_WINDOW_AUTOSIZE);
 
          // Set resolution
-         
+
          // Try 1080p
          bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
          bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
