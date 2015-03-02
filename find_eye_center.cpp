@@ -281,7 +281,7 @@ cv::Mat floodKillEdges(cv::Mat &mat) {
 
 void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out) {
 	////gridsize
-	int gs = 25;
+	int gs = 15;
   // for all possible centers within the grid
   for (int cy = y-gs; cy < y+gs; ++cy) 
   {

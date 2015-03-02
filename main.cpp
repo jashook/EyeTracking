@@ -141,6 +141,7 @@ inline void face_detection(cv::Mat& image)
 
 inline bool process_frame(cv::Mat& frame)
 {
+	//face detection -> find eye regions -> find eye center
    double time = ev10::eIIe::timing_helper<ev10::eIIe::SECOND>::time(face_detection, frame);
 
 #ifdef FPS_TIMING
