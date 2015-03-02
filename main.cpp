@@ -141,12 +141,12 @@ inline void face_detection(cv::Mat& image)
 
 inline bool process_frame(cv::Mat& frame)
 {
-   double time = ev10::eIIe::time_helper<ev10::eIIe::SECOND>::time(face_detection, frame);
+   double time = ev10::eIIe::timing_helper<ev10::eIIe::SECOND>::time(face_detection, frame);
 
 #ifdef FPS_TIMING
-	std::cout << "allMath/sec: " << 1 / time << "\t";
+	std::cout << "allMath/sec: " << 1 / time << "\t" << std::flush;
 #else
-	std::cout << "allMath/sec: " << 1 / time << "\r";
+	std::cout << "allMath/sec: " << 1 / time << "\r" << std::flush;
 #endif
    
    // Not finished

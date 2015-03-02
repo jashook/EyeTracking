@@ -48,6 +48,9 @@
 
 #endif
 
+#include "ring_buffer.hpp"
+#include "timing_helper.hpp"
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -124,71 +127,64 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
       void capture_sync()
       {
+         #ifdef FPS_TIMING
+			   static double time_inverse = 0;
+			   static double running_sum = 0;
+            static const size_t queue_length = 20;
+
+			   // Frame rate queue (averages of last n frames)
+            // Start it at the last index (queue_length)
+            ev10::eIIe::ring_buffer<double, queue_length> time_between_frames(queue_length);
+         
+         #endif
+
          cv::Mat frame;
       
 			//define done bool
          bool done = false;
 
-#ifdef FPS_TIMING
-			//define timing vars
-			std::chrono::time_point<std::chrono::system_clock> start, end;
-
-			//make queue for framerate (average of last 10 frames?)
-			std::queue<double> time_between_frames;
-
-			double timeInverse = 0;
-			double runningSum = 0;
-
-			//initilize the queue to 20 items
-			int queueLength = 20;
-			for (int i = 0; i < queueLength; ++i)
-			{
-				time_between_frames.push(timeInverse);
-			}
-#endif
-
-			//process frames until the user exits
+         // Process frames until the user exits
          while (!done)
          {
-
-#ifdef FPS_TIMING
-				//get start time
-				start = std::chrono::system_clock::now();
-#endif 
-
-				// Get the frame
-            _m_capture >> frame;
-            if (!frame.empty())
+            static auto processing_function = [this] (cv::VideoCapture& capture, cv::Mat& frame, bool& done)
             {
-               // Start processing
-               done = __ProcessingFunction(frame);
-            
-               if (__Gui)
+               // Get the frame
+               capture >> frame;
+               if (!frame.empty())
                {
-                  done = _show_default_gui(frame);
-               
+                  // Start processing
+                  done = __ProcessingFunction(frame);
+                  if (__Gui)
+                  {
+                     done = _show_default_gui(frame);
+                  }
                }
-            }
+            };
+   
+            #ifdef FPS_TIMING
 
-#ifdef FPS_TIMING
-				//get end time
-				end = std::chrono::system_clock::now();
+               // Time this function
+               double time_passed = ev10::eIIe::timing_helper<ev10::eIIe::SECOND>::time(processing_function, _m_capture, frame, done);
 
-				//calculate frame rate
-				std::chrono::duration<double> elapsed_seconds = end - start;
-				timeInverse = 1 / elapsed_seconds.count();
+				   time_inverse = 1 / time_passed;
 
-				//add new value to queue
-				time_between_frames.push(timeInverse);
-				//add to runningSum
-				runningSum += timeInverse;
-				//subtract last value in queue from runningSum
-				runningSum -= time_between_frames.front();
-				//pop the subtracted value
-				time_between_frames.pop();
-				//display framerate as the average of the queue (=runningSum / 10)
-				//std::cout << "fps: " << (int)runningSum / queueLength << "\r";
-#endif
+				   // Add new value to queue
+				   time_between_frames.push(time_inverse);
+				
+               // Add to runningSum
+				   running_sum += time_inverse;
+				
+               // Subtract last value in queue from runningSum
+				   running_sum -= time_between_frames.pop();
+				
+               // Display framerate as the average of the queue (=runningSum / queue_size)
+				   std::cout << "fps: " << (int)running_sum / queue_length << "\r" << std::flush;
+            
+            #else
+
+               _capture_sync_helper(_m_capture, frame, done);
+      
+            #endif
          }
       }
    

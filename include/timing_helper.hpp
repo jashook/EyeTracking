@@ -34,12 +34,12 @@ enum time_quantity_t { NANOSECOND, MICROSECOND, MILLISECOND, SECOND };
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-template<time_quantity_t __TimeQuantity> class time_helper
+template<time_quantity_t __TimeQuantity> class timing_helper
 {
    private: // Constructor | Destructor
 
-      time_helper() { }
-      ~time_helper() { }
+      timing_helper() { }
+      ~timing_helper() { }
 
    public: // Member Functions
 
