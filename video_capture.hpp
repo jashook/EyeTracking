@@ -52,18 +52,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define ESC_KEY 27
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-#if 1
-
-#define FPS_TIMING 
-
-#endif
+#define FPS_TIMING
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -80,11 +69,11 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
       {
          const std::string error_message = "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again.";
 
-			//open camera
+		 //open camera
          _m_capture.open(0);
 
-			//initilize window for video feed
-			cv::namedWindow("Video", CV_WINDOW_AUTOSIZE);
+		 //initilize window for video feed
+         cv::namedWindow("Video", CV_WINDOW_AUTOSIZE);
 
          // Set resolution
 
@@ -98,12 +87,6 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
          if (width && height)
          {
-				//TODO - change this: I am reasonably sure that checking if the camera is open like this will reset the default settings (640x480)
-            if (!_m_capture.open(0))
-            {
-               std::cerr << error_message << std::endl;
-            }
-
             return;
          }
 
@@ -115,11 +98,6 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
          if (width && height)
          {
-            if (!_m_capture.open(0))
-            {
-               std::cerr << error_message << std::endl;
-            }
-
             return;
          }
 
@@ -128,11 +106,6 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
          if (width && height)
          {
-            if (!_m_capture.open(-1))
-            {
-               std::cerr << error_message << std::endl;
-            }
-
             return;
          }
 
@@ -214,7 +187,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 				//pop the subtracted value
 				time_between_frames.pop();
 				//display framerate as the average of the queue (=runningSum / 10)
-				std::cout << "fps: " << (int)runningSum / queueLength << "\r";
+				//std::cout << "fps: " << (int)runningSum / queueLength << "\r";
 #endif
          }
       }

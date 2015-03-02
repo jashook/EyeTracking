@@ -44,6 +44,7 @@
 
 #include "constants.hpp"
 #include "find_eye_center.hpp"
+#include "timing_helper.hpp"
 #include "video_capture.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,9 +83,9 @@ inline void face_detection(cv::Mat& image)
    // Detect faces
    std::vector<cv::Rect> faces;
 
-	//dynamically scale min object size by the width of the image (hueristically determined to be imgWidth / 4)  ((hueristically is a cool word for made up))
-	int minObjectSize = image.cols / 4;
-   face_cascade.detectMultiScale(mat_gray, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE | CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(minObjectSize, minObjectSize));
+	// dynamically scale min object size by the width of the image (hueristically determined to be img_width / 4)  ((hueristically is a cool word for made up))
+	int min_object_size = image.cols / 4;
+   face_cascade.detectMultiScale(mat_gray, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE | CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(min_object_size, min_object_size));
 
    // Check to see that faces were found - if not, return
    if (faces.size() < 1)
@@ -140,22 +141,12 @@ inline void face_detection(cv::Mat& image)
 
 inline bool process_frame(cv::Mat& frame)
 {
-	//define timing vars
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-   // process the frame here
+   double time = ev10::eIIe::time_helper<ev10::eIIe::SECOND>::time(face_detection, frame);
 
-	// Look for Face
-	//record start time for processing frame
-	start = std::chrono::system_clock::now();
-	face_detection(frame);
-	end = std::chrono::system_clock::now();
-
-	// Print the time processing taken (math only)
-	std::chrono::duration<double> elapsed_seconds = end - start;
 #ifdef FPS_TIMING
-	std::cout << "allMath/sec: " << 1 / elapsed_seconds.count() << "\t";
+	std::cout << "allMath/sec: " << 1 / time << "\t";
 #else
-	std::cout << "allMath/sec: " << 1 / elapsed_seconds.count() << "\r";
+	std::cout << "allMath/sec: " << 1 / time << "\r";
 #endif
    
    // Not finished
