@@ -137,7 +137,8 @@ inline void face_detection(cv::Mat& image)
 
    //-- Find Eye Centers
    cv::Point leftPupil = findEyeCenter(face_roi_gray, left_eye_region, "Left Eye");
-   cv::Point rightPupil = findEyeCenter(face_roi_gray, right_eye_region, "Right Eye");
+   //cv::Point rightPupil = findEyeCenter(face_roi_gray, right_eye_region, "Right Eye");
+   cv::Point rightPupil(0, 0);
 
    // change eye centers to face coordinates
    rightPupil.x += right_eye_region.x;
