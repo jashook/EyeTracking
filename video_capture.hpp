@@ -72,10 +72,10 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
       {
          const std::string error_message = "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again.";
 
-		 //open camera
+		   // Open camera
          _m_capture.open(0);
 
-		 //initilize window for video feed
+		   // Initilize window for video feed
          cv::namedWindow("Video", CV_WINDOW_AUTOSIZE);
 
          // Set resolution
@@ -119,8 +119,8 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
       {
          // Clean up everything
 
-       _m_capture.release();
-		 cvDestroyWindow("Video");
+         _m_capture.release();
+		   cvDestroyWindow("Video");
       }
 
    public: // Member Functions

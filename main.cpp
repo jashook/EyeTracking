@@ -62,6 +62,39 @@
 // Load Face cascade (.xml file)
 cv::CascadeClassifier face_cascade;
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+inline cv::Rect* get_face_area(cv::Mat& current_image, int min_object_size)
+{
+   static cv::Rect* s_saved_rect = new cv::Rect();
+   static size_t s_frames = 0;
+
+   ++s_frames;
+
+   if (s_frames == 50 || s_frames == 1)
+   {
+      // Detect faces
+      std::vector<cv::Rect> faces;
+
+	   face_cascade.detectMultiScale(current_image, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE | CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(min_object_size, min_object_size));
+
+      // Check to see that faces were found - if not, return
+      if (faces.size() < 1)
+      {
+         return nullptr;
+      }
+      
+      // Find eye regions (numbers included from constants.h) (only use the first face)
+      *s_saved_rect = faces[0];
+
+      s_frames = 1;
+   
+   }
+
+   return s_saved_rect;
+}
+
 inline void face_detection(cv::Mat& image)
 {
    #ifdef DEBUG_FLAG
@@ -79,33 +112,24 @@ inline void face_detection(cv::Mat& image)
       cv::imshow("debug_gray", mat_gray);
       cv::imshow("debug_color", image);
    #endif
-
-   // Detect faces
-   std::vector<cv::Rect> faces;
-
-	// dynamically scale min object size by the width of the image (hueristically determined to be img_width / 4)  ((hueristically is a cool word for made up))
+   // Dynamically scale min object size by the width of the image (hueristically determined to be img_width / 4)  ((hueristically is a cool word for made up))
 	int min_object_size = image.cols / 4;
-   face_cascade.detectMultiScale(mat_gray, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE | CV_HAAR_FIND_BIGGEST_OBJECT, cv::Size(min_object_size, min_object_size));
 
-   // Check to see that faces were found - if not, return
-   if (faces.size() < 1)
-   {
-      return;
-   }
-      
-   // Find eye regions (numbers included from constants.h) (only use the first face)
-   cv::Rect face = faces[0];
+   cv::Rect* face = get_face_area(mat_gray, min_object_size);
 
-   cv::Mat face_roi_gray = mat_gray(face);
-   cv::Mat face_roi = image(face);
+   if (!face) return;
+
+   cv::Mat face_roi_gray = mat_gray(*face);
+
+   cv::Mat face_roi = image(*face);
    
-   int eye_region_width = face.width * (kEyePercentWidth / 100.0);
-   int eye_region_height = face.width * (kEyePercentHeight / 100.0);
-   int eye_region_top = face.height * (kEyePercentTop / 100.0);
+   int eye_region_width = face->width * (kEyePercentWidth / 100.0);
+   int eye_region_height = face->width * (kEyePercentHeight / 100.0);
+   int eye_region_top = face->height * (kEyePercentTop / 100.0);
    
-   cv::Rect left_eye_region(face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
+   cv::Rect left_eye_region(face->width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
 
-   cv::Rect right_eye_region(face.width - eye_region_width - face.width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
+   cv::Rect right_eye_region(face->width - eye_region_width - face->width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
 
    /////////////////////////////////////////////////////////////////////////////
    // EYE LIKE
@@ -133,10 +157,7 @@ inline void face_detection(cv::Mat& image)
    cv::rectangle(face_roi, right_eye_region, cv::Scalar(0, 0, 255));
    
    // Print all the objects detected
-   for (int i = 0; i < faces.size(); i++)
-   {
-      cv::rectangle(image, faces[i], cv::Scalar( 255, 0, 0 ));
-   }
+   cv::rectangle(image, *face, cv::Scalar( 255, 0, 0 ));
 }
 
 inline bool process_frame(cv::Mat& frame)
