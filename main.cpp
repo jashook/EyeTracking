@@ -72,6 +72,11 @@ inline cv::Rect* get_face_area(cv::Mat& current_image, int min_object_size)
 
    ++s_frames;
 
+   if (s_frames > 50)
+   {
+      s_frames = 1;
+   }
+
    if (s_frames == 50 || s_frames == 1)
    {
       // Detect faces
@@ -129,7 +134,7 @@ inline void face_detection(cv::Mat& image)
    
    cv::Rect left_eye_region(face->width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
 
-   cv::Rect right_eye_region(face->width - eye_region_width - face->width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
+   //cv::Rect right_eye_region(face->width - eye_region_width - face->width * (kEyePercentSide / 100.0), eye_region_top, eye_region_width, eye_region_height);
 
    /////////////////////////////////////////////////////////////////////////////
    // EYE LIKE
@@ -138,16 +143,16 @@ inline void face_detection(cv::Mat& image)
    //-- Find Eye Centers
    cv::Point leftPupil = findEyeCenter(face_roi_gray, left_eye_region, "Left Eye");
    //cv::Point rightPupil = findEyeCenter(face_roi_gray, right_eye_region, "Right Eye");
-   cv::Point rightPupil(0, 0);
+   //cv::Point rightPupil(0, 0);
 
    // change eye centers to face coordinates
-   rightPupil.x += right_eye_region.x;
-   rightPupil.y += right_eye_region.y;
+   //rightPupil.x += right_eye_region.x;
+   //rightPupil.y += right_eye_region.y;
    leftPupil.x += left_eye_region.x;
    leftPupil.y += left_eye_region.y;
 
    // draw eye centers
-   circle(face_roi, rightPupil, 3, cv::Scalar(0, 255, 0));
+   //circle(face_roi, rightPupil, 3, cv::Scalar(0, 255, 0));
    circle(face_roi, leftPupil, 3, cv::Scalar(0, 255, 0));
 
    /////////////////////////////////////////////////////////////////////////////
@@ -155,7 +160,7 @@ inline void face_detection(cv::Mat& image)
    /////////////////////////////////////////////////////////////////////////////
    
    cv::rectangle(face_roi, left_eye_region, cv::Scalar(0, 255, 0));
-   cv::rectangle(face_roi, right_eye_region, cv::Scalar(0, 0, 255));
+   //cv::rectangle(face_roi, right_eye_region, cv::Scalar(0, 0, 255));
    
    // Print all the objects detected
    cv::rectangle(image, *face, cv::Scalar( 255, 0, 0 ));
