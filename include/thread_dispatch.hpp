@@ -9,7 +9,11 @@
 // 05-Mar-15: Version 1.0: Last Updated 
 // 
 // Notes: 
-// 
+//
+// Singleton Type
+//
+// std::function<void()> is the c++11 way to pass a lambda.
+//
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -19,12 +23,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <std::thread>
+#include <array>
+#include <functional>
+#include <thread>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-class thread_dispatch
+template<typename __LockType> class thread_dispatch
 {
    private:  // Constructor | Desctructor
 
@@ -56,23 +62,49 @@ class thread_dispatch
 
       void _ctor(size_t thread_count)
       {
-         
+         static auto start_function = [this]()
+         {
+            // Function threads will start in
+
+         }
+
+         _m_threads = new std::thread*[thread_count];
+         _m_queues = new ev10::eIIe::ring_buffer<std::function<void()>*, 1024>[thread_count];
+
+         for (std::size_t count = 0; count < thread_count; ++count)
+         {
+            _m_threads[count] = new std::thread(start_function);
+
+         }
+   
+         // Non-blocking, return before threads are created
       }
 
       void _join_all()
       {
-
+         for (std::thread* thread : _m_threads)
+         {
+            thread->join();
+         }
       }
 
-      void _start_all()
+      void _start_all(std::function<void()>& function)
       {
+         // Take writer lock here.
+
+         for (std::size_t index = 0; index < _m_thread_count; ++index)
+         {
+            _m_process_queues[index]->add(&function);
+         }
 
       }
 
    private: // Member variables
 
-      std::mutex _m_start_lock;
-      std::vector<std::thread> _m_threads;
+      ev10::eIIe::ring_buffer<std::function<void()>*, 1024>* _m_process_queues;
+
+      __LockType _m_start_lock;
+      std::thread* _m_threads;
 
 }; // end of class (find_eye_center)
 

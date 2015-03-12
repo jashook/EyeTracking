@@ -53,6 +53,12 @@ template<typename __Type> atomic
       void increment() { _lock(); ++_m_value; _unlock(); }
       void decrement() { _lock(); --_m_value; _unlock(); }
 
+   public:  // Operators
+
+      bool operator bool() { return _operator_bool(); }
+      void operator++() { increment(); }
+      void operator--() { decrement(); }
+
    private: // Private Member Functions
    
       _ctor()
@@ -78,6 +84,19 @@ template<typename __Type> atomic
          #endif
 
          // Fall out of the function with the lock
+      }
+
+      bool operator_bool()
+      {
+         bool return_value;
+
+         _lock();
+
+         return_value = _m_value;
+
+         _unlock();
+
+         return return_value;
       }
 
       bool _try_lock()
