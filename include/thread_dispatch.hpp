@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-template<typename __LockType> class thread_dispatch
+class thread_dispatch
 {
    private:  // Constructor | Desctructor
 
@@ -74,24 +74,50 @@ template<typename __LockType> class thread_dispatch
       {
          // Function threads will start in
          
-         static auto start_function = [this, &_m_lock]()
+         static auto start_function = [this](int thread_index)
          {
             while (1)
             {
+               // Take a reader lock
+               _m_lock.lock<ev10::eIIe::READER>();
 
+               // Check if there is anything to work on
 
+               if (_m_finished)
+               {
+                  _m_lock.unlock<ev10::eIIe::READER>();
+   
+                  break;
+               }
+
+               else if (!_m_queues[thread_index].empty())
+               {
+                  // Pop off the function to work on.
+
+                  std::function<void>* function = _m_queues[thread_index].pop();
+
+                  _m_lock.unlock<ev10::eIIe::READER>();
+
+                  (*function)();
+
+               }
+
+               else
+               {
+                  _m_lock.unlock<ev10::eIIe::READER>();
+               }
 
             }
-            
-
          }
+
+         _m_finished = false;
 
          _m_threads = new std::thread*[thread_count];
          _m_queues = new ev10::eIIe::ring_buffer<std::function<void()>*, 1024>[thread_count];
 
          for (std::size_t count = 0; count < thread_count; ++count)
          {
-            _m_threads[count] = new std::thread(start_function);
+            _m_threads[count] = new std::thread(start_function, count);
 
          }
    
@@ -112,6 +138,12 @@ template<typename __LockType> class thread_dispatch
 
       void _join_all()
       {
+         _m_lock.lock<ev10::eIIe::WRITER>();
+
+         _m_finished = true;
+
+         _m_lock.lock<ev10::eIIe::WRITER>(); 
+
          for (std::thread* thread : _m_threads)
          {
             thread->join();
@@ -134,6 +166,8 @@ template<typename __LockType> class thread_dispatch
       }
 
    private: // Member variables
+
+      bool _m_finished;
 
       ev10::eIIe::ring_buffer<std::function<void()>*, 1024>* _m_process_queues;
 
