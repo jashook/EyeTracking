@@ -56,12 +56,12 @@ class cas_lock
 
    private: // Private Member Functions
    
-      _ctor()
+      void _ctor()
       {
          _m_lock = UNLOCKED;
       }
 
-      _dtor()
+      void _dtor()
       {
          _m_lock = UNLOCKED;
       }

@@ -23,6 +23,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "rw_lock.hpp"
+
 #include <array>
 #include <functional>
 #include <thread>
@@ -38,6 +40,14 @@ template<typename __LockType> class thread_dispatch
       ~thread_dispatch() { _dtor(); }
 
    public:  // Static Member Functions
+
+      static void clean_up()
+      {
+         s_dispatch->join_all();
+
+         delete s_displatch;
+
+      }
 
       static thread_dispatch* const get_dispatch() 
       { 
@@ -62,9 +72,17 @@ template<typename __LockType> class thread_dispatch
 
       void _ctor(size_t thread_count)
       {
-         static auto start_function = [this]()
+         // Function threads will start in
+         
+         static auto start_function = [this, &_m_lock]()
          {
-            // Function threads will start in
+            while (1)
+            {
+
+
+
+            }
+            
 
          }
 
@@ -80,6 +98,18 @@ template<typename __LockType> class thread_dispatch
          // Non-blocking, return before threads are created
       }
 
+      void _dtor()
+      {
+         delete [] _m_queues;
+
+         for (std::size_t count = 0; count < _m_thread_count; ++count)
+         {
+            delete [] _m_threads[count];
+         }
+
+         delete [] _m_threads;
+      }
+
       void _join_all()
       {
          for (std::thread* thread : _m_threads)
@@ -92,10 +122,14 @@ template<typename __LockType> class thread_dispatch
       {
          // Take writer lock here.
 
+         _m_lock.lock<ev10::eIIe::WRITER>();
+
          for (std::size_t index = 0; index < _m_thread_count; ++index)
          {
             _m_process_queues[index]->add(&function);
          }
+
+         _m_lock.unlock<ev10::eIIe::WRITER>();
 
       }
 
@@ -103,7 +137,7 @@ template<typename __LockType> class thread_dispatch
 
       ev10::eIIe::ring_buffer<std::function<void()>*, 1024>* _m_process_queues;
 
-      __LockType _m_start_lock;
+      ev10::eIIe::rw_lock _m_lock;
       std::thread* _m_threads;
 
 }; // end of class (find_eye_center)

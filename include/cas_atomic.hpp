@@ -37,7 +37,7 @@ namespace eIIe {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-template<typename __Type> atomic
+template<typename __Type> class cas_atomic
 {
    private: // Private type definitions and constants
 
@@ -45,8 +45,8 @@ template<typename __Type> atomic
 
    public:  // Constructor | Destructor
 
-      atomic() { _ctor(); }
-      ~atomic() { _dtor(); }
+      cas_atomic() { _ctor(); }
+      ~cas_atomic() { _dtor(); }
 
    public:  // Public Member Functions
 
@@ -55,27 +55,28 @@ template<typename __Type> atomic
 
    public:  // Operators
 
-      bool operator bool() { return _operator_bool(); }
+      operator bool() { bool ret; _lock(); ret = _m_value; _unlock(); return ret; }
       void operator++() { increment(); }
       void operator--() { decrement(); }
 
    private: // Private Member Functions
    
-      _ctor()
+      void _ctor()
       {
          _m_lock = UNLOCKED;
+         _m_value = { 0 };
       }
 
-      _dtor()
+      void _dtor()
       {
          _m_lock = LOCKED;
       }
 
-      void _lock(int value)
+      void _lock()
       {
          #if __GNUC__
 
-            while(!__sync_bool_compare_and_swap(&_m_lock, ));
+            while(!__sync_bool_compare_and_swap(&_m_lock, UNLOCKED, LOCKED));
 
          # elif _WIN32
 
@@ -84,19 +85,6 @@ template<typename __Type> atomic
          #endif
 
          // Fall out of the function with the lock
-      }
-
-      bool operator_bool()
-      {
-         bool return_value;
-
-         _lock();
-
-         return_value = _m_value;
-
-         _unlock();
-
-         return return_value;
       }
 
       bool _try_lock()

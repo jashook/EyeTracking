@@ -37,10 +37,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <condition_variable>
-
 #include "cas_atomic.hpp"
 #include "cas_lock.hpp"
+
+#include <chrono>
+#include <thread>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -51,20 +52,36 @@ namespace eIIe {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+enum accessor_type { READER, WRITER };
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 class rw_lock
 {
-   public:  // Type definitions and Constants
-
-      enum accessor_type { READER, WRITER }
-
    public:  // Constructor | Destructor
 
-      rw_lock_w_favored() { _ctor(); }
-      ~rw_lock_w_favored() { _dtor(); }
+      rw_lock() { _ctor(); }
+      ~rw_lock() { _dtor(); }
 
    public:  // Public Member Functions
 
-      template<accessor_type __AccessorType> void lock()
+      template<accessor_type __AccessorType> void lock() { _lock<__AccessorType>(); }
+      template<accessor_type __AccessorType> void unlock() { _unlock<__AccessorType>(); }
+
+   private: // Private member Functions 
+
+      void _ctor()
+      {
+
+      }
+
+      void _dtor()
+      {
+
+      }
+
+      template<accessor_type __AccessorType> void _lock()
       {
          if (__AccessorType == READER)
          {
@@ -111,12 +128,43 @@ class rw_lock
          {
             // Getting a Writer lock.
 
+            _m_writer_lock.lock();
+
+            ++_m_writer_amount;
+
+            // Have the lock, but wait until there are no readers
+            // Spin lock on amount of readers
+
+            while (_m_reader_amount)
+            {
+               std::this_thread::sleep_for(std::chrono::microseconds(10));
+            }
+
+            // Have the writer lock at this point
+            // Enter into the critical section
 
          }
       }
 
-      template<accessor_type __AccessorType> void unlock()
+      template<accessor_type __AccessorType> void _unlock()
       {
+         if (__AccessorType == READER)
+         {
+            // No Checks, simply get rid of your hold
+            
+            --_m_reader_amount;
+            
+         }
+
+         else
+         {
+            // Release the writer lock.
+
+            --_m_writer_amount;
+
+            _m_writer_lock.unlock();
+
+         }
 
       }
 
