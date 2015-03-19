@@ -63,6 +63,9 @@ cv::Mat eyeCornerMap(const cv::Mat& region, bool left, bool left2)
 
 cv::Point2f findEyeCorner(cv::Mat region, bool left, bool left2)
    {
+   //generate corner kernals
+   createCornerKernels();
+
    cv::Mat cornerMap = eyeCornerMap(region, left, left2);
 
    cv::Point maxP;

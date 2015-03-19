@@ -80,36 +80,39 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
          // Set resolution
 
-               // Try 1080p
-         //bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
-         //bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
+         // Try 1080p
+         /*bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
+         bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
 
-         ////TODO - find why (even though the set function returns true) the get value returns the default.
-         //double setWidth = _m_capture.get(CV_CAP_PROP_FRAME_WIDTH);	
-         //std::cout << "set width: " << setWidth << std::endl;
+         //TODO - find why (even though the set function returns true) the get value returns the default.
+         double setWidth = _m_capture.get(CV_CAP_PROP_FRAME_WIDTH);	
+         std::cout << "set width: " << setWidth << std::endl;
 
-         //      if (width && height)
-         //      {
-         //         return;
-         //      }
+               if (width && height)
+               {
+                  std::cout << "Frame Width: " << _m_capture.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+                  return;
+               }
+         */
 
-         std::cout << _m_capture.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
 
          // Try 720p
-         bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
-         bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
+         //bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
+         //bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
+
+         //if (width && height)
+         //   {
+         //      std::cout << "Frame Width: " << _m_capture.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+         //      return;
+         //   }
+
+         bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+         bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
 
          if (width && height)
             {
-            return;
-            }
-
-         width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-         height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
-
-         if (width && height)
-            {
-            return;
+               std::cout << "Frame Width: " << _m_capture.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+               return;
             }
 
          std::cerr << "Unable to set the frame width and height, defaulting to the standard resolution" << std::endl;
@@ -138,28 +141,29 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
 #endif
 
-         cv::Mat frame;
+         cv::Mat* frame = new cv::Mat();
 
          //define done bool
          bool done = false;
 
          // Process frames until the user exits
          while (!done)
+         {
+            static auto processing_function = [this](cv::VideoCapture& capture, cv::Mat* frame, bool& done)
             {
-            static auto processing_function = [this](cv::VideoCapture& capture, cv::Mat& frame, bool& done)
-               {
                // Get the frame
-               capture >> frame;
-               if (!frame.empty())
-                  {
+               capture >> *frame;
+               if (!frame->empty())
+               {
                   // Start processing
-                  done = __ProcessingFunction(frame);
+                  done = __ProcessingFunction(*frame);
+
                   if (__Gui)
-                     {
-                     done = _show_default_gui(frame);
-                     }
+                  {
+                     done = _show_default_gui(*frame);
                   }
-               };
+               }
+            };
 
 #ifdef FPS_TIMING
 
