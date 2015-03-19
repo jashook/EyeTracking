@@ -45,8 +45,13 @@ template<typename __Type, size_t __Size> class ring_buffer
 
    public:  // Member Functions
 
+      bool empty() { return _empty(); }
       __Type pop() { return _pop(); }
       void push(__Type& value) { _push(value); }
+
+   public:  // Public Operators
+
+      operator bool() { return _empty(); }
 
    private: // Private Member Functions
 
@@ -66,6 +71,11 @@ template<typename __Type, size_t __Size> class ring_buffer
          std::memset(_m_queue, 0, sizeof(__Type) * __Size);
       }
 
+      bool _empty()
+      {
+         return _m_amount == 0;
+      }
+
       __Type _pop()
       {
          if (_m_end_index == _m_start_index)
@@ -78,6 +88,8 @@ template<typename __Type, size_t __Size> class ring_buffer
          // Increase the index then mode by the size to
          // allow the queue to wrap to the beginning
          ++_m_start_index %= __Size;
+
+         _m_amount = _m_amount == 0 ? _m_amount : _m_amount - 1;
 
          return temp;
       }
@@ -94,10 +106,14 @@ template<typename __Type, size_t __Size> class ring_buffer
          // If more values were inserted then we have the capacity for
          // then drop the first value inserted
          _m_start_index = _m_end_index == _m_start_index ? _m_start_index + 1 : _m_start_index;
+
+         _m_amount = _m_amount == __SIZE ? _m_amount : _m_amount + 1;
       }
 
    private: // Member Variables
    
+      size_t _m_amount;
+
       size_t _m_end_index;
       __Type _m_queue[__Size];
       size_t _m_start_index;
