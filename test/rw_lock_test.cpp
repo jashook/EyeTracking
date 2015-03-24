@@ -41,7 +41,7 @@ void test_multiple_reader_writer()
    rw_lock.lock<ev10::eIIe::READER>();
 
    auto launching_function = [&shared_value, &rw_lock] (){
-      // get a writer lock and spin for a little
+      // Get a writer lock and spin for a little
 
       rw_lock.lock<ev10::eIIe::WRITER>();
 
@@ -56,7 +56,7 @@ void test_multiple_reader_writer()
 
    rw_lock.unlock<ev10::eIIe::READER>();
 
-   // do nothing for a little
+   // Do nothing for a little
    for (std::size_t count = 0; count < 10000000; ++count);
 
    //rw_lock.lock<ev10::eIIe::READER>();

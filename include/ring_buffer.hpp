@@ -47,7 +47,7 @@ template<typename __Type, size_t __Size> class ring_buffer
 
       bool empty() { return _empty(); }
       __Type pop() { return _pop(); }
-      void push(__Type& value) { _push(value); }
+      void push(__Type value) { _push(value); }
 
    public:  // Public Operators
 
@@ -59,6 +59,7 @@ template<typename __Type, size_t __Size> class ring_buffer
       {
          _m_start_index = 0;
          _m_end_index = start_location - 1 < __Size ? start_location - 1 : 0;
+         _m_amount = 0;
 
          std::memset(_m_queue, 0, sizeof(__Type) * __Size);
       }
@@ -107,7 +108,7 @@ template<typename __Type, size_t __Size> class ring_buffer
          // then drop the first value inserted
          _m_start_index = _m_end_index == _m_start_index ? _m_start_index + 1 : _m_start_index;
 
-         _m_amount = _m_amount == __SIZE ? _m_amount : _m_amount + 1;
+         _m_amount = _m_amount == __Size ? _m_amount : _m_amount + 1;
       }
 
    private: // Member Variables

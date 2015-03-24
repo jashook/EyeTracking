@@ -31,6 +31,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef _WIN32
+
+#include <Windows.h>
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 namespace ev10 {
 namespace eIIe {
 
@@ -55,7 +64,8 @@ template<typename __Type> class cas_atomic
 
    public:  // Operators
 
-      operator bool() { bool ret; _lock(); ret = _m_value; _unlock(); return ret; }
+      operator bool() { bool ret; _lock(); ret = _m_value != 0; _unlock(); return ret; }
+      __Type operator*() { return _m_value; }
       void operator++() { increment(); }
       void operator--() { decrement(); }
 
@@ -80,7 +90,7 @@ template<typename __Type> class cas_atomic
 
          # elif _WIN32
 
-            while(InterlockedCompareExchange(&_m_lock, UNLOCKED, LOCKED) != LOCKED);
+            while (InterlockedCompareExchange(&_m_lock, LOCKED, UNLOCKED) != UNLOCKED);
 
          #endif
 
@@ -95,7 +105,7 @@ template<typename __Type> class cas_atomic
 
          # elif _WIN32
 
-             return InterlockedCompareExchange(&_m_lock, UNLOCKED, LOCKED);
+            return InterlockedCompareExchange(&_m_lock, LOCKED, UNLOCKED);
 
          #endif
       }
@@ -108,14 +118,14 @@ template<typename __Type> class cas_atomic
 
          # elif _WIN32
 
-            InterlockedCompareExchange(&_m_lock, LOCKED, UNLOCKED) == UNLOCKED;
+            InterlockedCompareExchange(&_m_lock, UNLOCKED, LOCKED);
 
          #endif
       }
       
    private: // Member Variables
 
-      volatile lock_t _m_lock;
+      volatile std::size_t _m_lock;
       volatile __Type _m_value;
 
 }; // end of class(semaphore)
@@ -129,7 +139,7 @@ template<typename __Type> class cas_atomic
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif // __SEMAPHORE_HPP__
+#endif // __CAS_ATOMIC_HPP__
 
 ////////////////////////////////////////////////////////////////////////////////
 // End of file semaphore.hpp

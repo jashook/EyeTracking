@@ -31,6 +31,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstdlib>
+
+#ifdef _WIN32
+
+#include <Windows.h>
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 namespace ev10 {
 namespace eIIe {
 
@@ -51,7 +62,7 @@ class cas_lock
    public:  // Public Member Functions
 
       void lock() { _lock(); }
-      bool try_lock() { return _try_lock(); }
+      bool try_lock() { return _try_lock() == 0; }
       void unlock() { _unlock(); }
 
    private: // Private Member Functions
@@ -70,18 +81,18 @@ class cas_lock
       {
          #if __GNUC__
 
-            while(!__sync_bool_compare_and_swap(&_m_lock, UNLOCKED, LOCKED));
+            while (!__sync_bool_compare_and_swap(&_m_lock, UNLOCKED, LOCKED));
 
          # elif _WIN32
 
-            while(InterlockedCompareExchange(&_m_lock, UNLOCKED, LOCKED) != LOCKED);
+            while (InterlockedCompareExchange(&_m_lock, LOCKED, UNLOCKED) != UNLOCKED);
 
          #endif
 
          // Fall out of the function with the lock
       }
 
-      bool _try_lock()
+      std::size_t _try_lock()
       {
          #if __GNUC__
 
@@ -89,7 +100,7 @@ class cas_lock
 
          # elif _WIN32
 
-             return InterlockedCompareExchange(&_m_lock, UNLOCKED, LOCKED);
+            return InterlockedCompareExchange(&_m_lock, LOCKED, UNLOCKED);
 
          #endif
       }
@@ -102,14 +113,14 @@ class cas_lock
 
          # elif _WIN32
 
-            InterlockedCompareExchange(&_m_lock, LOCKED, UNLOCKED) == UNLOCKED;
+            InterlockedCompareExchange(&_m_lock, UNLOCKED, LOCKED);
 
          #endif
       }
       
    private: // Member Variables
 
-      volatile bool _m_lock;
+      volatile std::size_t _m_lock;
 
 }; // end of class(cas_lock)
 
