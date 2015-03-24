@@ -107,7 +107,7 @@ template<typename __Type, size_t __Size> class ring_buffer
          // then drop the first value inserted
          _m_start_index = _m_end_index == _m_start_index ? _m_start_index + 1 : _m_start_index;
 
-         _m_amount = _m_amount == __SIZE ? _m_amount : _m_amount + 1;
+         _m_amount = _m_amount == __Size ? _m_amount : _m_amount + 1;
       }
 
    private: // Member Variables
