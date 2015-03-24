@@ -214,7 +214,7 @@ inline void face_detection(cv::Mat& image)
    cv::rectangle(image, *face, cv::Scalar(255, 0, 0));
 
    //update centerpoint
-   calculateScreenAdjustment(leftPupil);
+   //calculateScreenAdjustment(leftPupil);
 }
 
 inline bool process_frame(cv::Mat& frame)
