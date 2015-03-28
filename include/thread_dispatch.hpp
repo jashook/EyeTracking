@@ -92,6 +92,7 @@ template<typename __Type> class thread_dispatch
 
       void add_process_all(std::function<void(__Type, std::size_t)> function) { _start_all(function); }
       void join_all() { _join_all(); }
+      std::size_t thread_count() { return _thread_count(); }
 
    private: // Private Member functions
 
@@ -213,6 +214,11 @@ template<typename __Type> class thread_dispatch
 
          _m_lock.unlock<ev10::eIIe::WRITER>();
 
+      }
+
+      std::size_t _thread_count()
+      {
+         return _m_thread_count;
       }
 
    private: // Member variables
