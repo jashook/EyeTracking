@@ -40,7 +40,7 @@ namespace eIIe {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-template<typename __Type> class thread_dispatch
+template<typename __Type, typename ... __Arguments> class thread_dispatch
 {
    private:  // Constructor | Desctructor
 
@@ -58,13 +58,6 @@ template<typename __Type> class thread_dispatch
          delete dispatch;
 
          get_dispatch(true);
-      }
-
-      static void set_value(__Type value)
-      {
-         thread_dispatch* dispatch = get_dispatch();
-
-         dispatch->_m_value = value;
       }
 
       static thread_dispatch* get_dispatch(bool reset = false)
@@ -88,11 +81,25 @@ template<typename __Type> class thread_dispatch
          return s_dispatch;
       }
 
+      static void set_value(__Type value, __Arguments ... arguments)
+      {
+         thread_dispatch* dispatch = get_dispatch();
+
+         dispatch->_m_values = std::make_tuple(value, arguments ...);
+      }
+
+      static size_t thread_count()
+      {
+         thread_dispatch* dispatch = get_dispatch();
+
+         return dispatch->get_thread_count();
+      }
+
    public:  // Member Functions
 
-      void add_process_all(std::function<void(__Type, std::size_t)> function) { _start_all(function); }
+      void add_process_all(std::function<void(std::tuple<__Type, __Arguments ...>, std::size_t)> function) { _start_all(function); }
+      std::size_t get_thread_count() { return _get_thread_count(); }
       void join_all() { _join_all(); }
-      std::size_t thread_count() { return _thread_count(); }
 
    private: // Private Member functions
 
@@ -100,7 +107,7 @@ template<typename __Type> class thread_dispatch
       {
          // Function threads will start in
 
-         auto start_function = [this](int thread_index)
+         auto start_function = [this](std::size_t thread_index)
          {
             while (1)
             {
@@ -124,7 +131,7 @@ template<typename __Type> class thread_dispatch
 
                   _m_lock.unlock<ev10::eIIe::READER>();
 
-                  function(_m_value, thread_index);
+                  function(_m_values, thread_index);
 
                   _m_lock.lock<ev10::eIIe::WRITER>();
 
@@ -145,7 +152,7 @@ template<typename __Type> class thread_dispatch
 
          _m_thread_count = thread_count;
          _m_threads = new std::thread*[thread_count];
-         _m_process_queues = new ev10::eIIe::ring_buffer<std::function<void(__Type, std::size_t)>, 1024>[thread_count];
+         _m_process_queues = new ev10::eIIe::ring_buffer<std::function<void(std::tuple<__Type, __Arguments ...>, std::size_t)>, 1024>[thread_count];
 
          _m_join_amount = 0;
 
@@ -185,6 +192,11 @@ template<typename __Type> class thread_dispatch
          _m_lock.unlock<ev10::eIIe::READER>();
       }
 
+      std::size_t _get_thread_count()
+      {
+         return _m_thread_count;
+      }
+
       void _join_all_hard()
       {
          _m_lock.lock<ev10::eIIe::WRITER>();
@@ -199,7 +211,7 @@ template<typename __Type> class thread_dispatch
          }
       }
 
-      void _start_all(std::function<void(__Type, std::size_t)> function)
+      void _start_all(std::function<void(std::tuple<__Type, __Arguments ...>, std::size_t)> function)
       {
          // Take writer lock here.
 
@@ -216,23 +228,18 @@ template<typename __Type> class thread_dispatch
 
       }
 
-      std::size_t _thread_count()
-      {
-         return _m_thread_count;
-      }
-
    private: // Member variables
 
       bool _m_finished;
 
-      ev10::eIIe::ring_buffer<std::function<void(__Type, std::size_t)>, 1024>* _m_process_queues;
+      ev10::eIIe::ring_buffer<std::function<void(std::tuple<__Type, __Arguments ...>, std::size_t)>, 1024>* _m_process_queues;
 
       ev10::eIIe::rw_lock _m_lock;
       std::thread** _m_threads;
       std::size_t _m_thread_count;
       std::size_t _m_join_amount;
 
-      __Type _m_value;
+      std::tuple<__Type, __Arguments ...> _m_values;
 
 }; // end of class (find_eye_center)
 

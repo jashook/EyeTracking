@@ -75,6 +75,8 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    cv::Mat eye_roi;
    cv::Mat eye_roi_unscaled = face(eye);
 
+   auto dispatch = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::get_dispatch();
+
    // We are prefering accuracy over speed at this point
    // Using threading to combat the performance loss
    scaleToFastSize(eye_roi_unscaled, eye_roi);
@@ -93,42 +95,66 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    // Compute the threshold
    double magnitude_threshhold = computeDynamicThreshold(magnitudes, kGradientThreshold);
 
-   // row_index will start at row 0 to amount of rows (y direction)
-   for (int row_index = 0; row_index < eye_roi.rows; ++row_index)
+   ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::set_value(&gradient_x, &gradient_y, &magnitudes);
+
+   // Making the lambda to thread.
+   auto threaded_area = [eye_roi, magnitude_threshhold] (std::tuple<cv::Mat*, cv::Mat*, cv::Mat*> tuple, int thread_index)
    {
-      double* gradient_row = gradient_x.ptr<double>(row_index);
-      double* gradient_column = gradient_y.ptr<double>(row_index);
+      cv::Mat* gradient_x = std::get<0>(tuple);
+      cv::Mat* gradient_y = std::get<1>(tuple);
+      cv::Mat* magnitudes = std::get<2>(tuple);
 
-      const double* magnitude_row = magnitudes.ptr<double>(row_index);
+      std::size_t threads = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::thread_count();
 
-      for (int column_index = 0; column_index < eye_roi.cols; ++column_index)
+      std::size_t start_index = thread_index * eye_roi.rows / threads;
+      std::size_t end_index = thread_index * eye_roi.rows / threads + eye_roi.rows / threads;
+
+      // row_index will start at row 0 to amount of rows (y direction)
+      for (int row_index = start_index; row_index < end_index; ++row_index)
       {
-         register double gradient_x_at_column = gradient_row[column_index];
-         register double gradient_y_at_column = gradient_column[column_index];
+         double* gradient_row = gradient_x->ptr<double>(row_index);
+         double* gradient_column = gradient_y->ptr<double>(row_index);
 
-         register double magnitude = magnitude_row[column_index];
+         std::size_t threads = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::thread_count();
 
-         if (magnitude > magnitude_threshhold)
+         const double* magnitude_row = magnitudes->ptr<double>(row_index);
+
+         for (int column_index = 0; column_index < eye_roi.cols; ++column_index)
          {
-            gradient_row[column_index] = gradient_x_at_column / magnitude;
-            gradient_column[column_index] = gradient_y_at_column / magnitude;
+            register double gradient_x_at_column = gradient_row[column_index];
+            register double gradient_y_at_column = gradient_column[column_index];
+
+            register double magnitude = magnitude_row[column_index];
+
+            if (magnitude > magnitude_threshhold)
+            {
+               gradient_row[column_index] = gradient_x_at_column / magnitude;
+               gradient_column[column_index] = gradient_y_at_column / magnitude;
+            }
+
+            else
+            {
+               gradient_row[column_index] = 0.0;
+               gradient_column[column_index] = 0.0;
+            }
          }
 
-         else
-         {
-            gradient_row[column_index] = 0.0;
-            gradient_column[column_index] = 0.0;
-         }
       }
+   };
+   
+   dispatch->add_process_all(threaded_area);
+   dispatch->join_all();
 
-   }
+   //ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::clean_up();
 
-   // imshow(debug_window,gradient_x);
+   //TODO - JOIN HERE
 
    // -- Create a blurred and inverted image for weighting
    cv::Mat weight;
 
    GaussianBlur(eye_roi, weight, cv::Size(kWeightBlurSize, kWeightBlurSize), 0, 0);
+
+   //TODO - THREAD HERE
 
    // Invert at every index
    for (int row_index = 0; row_index < weight.rows; ++row_index)
@@ -141,10 +167,10 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
       }
 
    }
-
-   // imshow(debug_window, weight);
+   //TODO - JOIN HERE
 
    // Run the algorithm!
+   //TODO - MAKE ONE OF THESE FOR EACH THREAD
    cv::Mat output_sum = cv::Mat::zeros(eye_roi.rows, eye_roi.cols, CV_64F);
 
    // For each possible gradient location
@@ -160,7 +186,11 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    const int row_start = weight.rows * 0.25;
    const int row_end = weight.rows * 0.75;
 
-   // printf("Eye Size: %ix%i\n", outSum.cols, outSum.rows);
+   //TODO - THREAD HERE
+   //for (int thread_number = 0; thread_number < total_num_threads; ++thread_number)
+   //{
+
+  // }
 
    // For every row
    for (int current_row_index = row_start; current_row_index < row_end; ++current_row_index)
@@ -186,14 +216,14 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
       }
    }
 
+   //TODO - JOIN HERE? OR NAH? (maybe after the 'averaging' step?)
+
    // Scale all the values down, basically averaging them
 
    double numGradients = (weight.rows*weight.cols);
 
    cv::Mat output;
    output_sum.convertTo(output, CV_32F, 1.0 / numGradients);
-
-   // imshow(debug_window, out);
 
    //-- Find the maximum point
    cv::Point max_p;
@@ -290,7 +320,7 @@ cv::Mat floodKillEdges(cv::Mat &mat)
 void testPossibleCentersFormula(int x, int y, unsigned char weight, double gx, double gy, cv::Mat &out)
 {
    ////gridsize
-   int gs = 25;
+   int gs = 21;
    // for all possible centers within the grid
    for (int cy = y - gs; cy < y + gs; ++cy)
    {
@@ -320,7 +350,7 @@ void testPossibleCentersFormula(int x, int y, unsigned char weight, double gx, d
          double magnitude = sqrt((dx * dx) + (dy * dy));
          dx = dx / magnitude;
          dy = dy / magnitude;
-         double dotProduct = dx*gx + dy*gy;
+         double dotProduct = dx * gx + dy * gy;
          dotProduct = std::max(0.0, dotProduct);
          // square and multiply by the weight
          if (kEnableWeight)
