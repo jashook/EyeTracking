@@ -75,7 +75,7 @@ template<typename __Type, typename ... __Arguments> class thread_dispatch
          {
             std::size_t thread_count = std::thread::hardware_concurrency();
 
-            s_dispatch = new thread_dispatch(thread_count);
+            s_dispatch = new thread_dispatch(thread_count - 1);
          }
 
          return s_dispatch;
@@ -184,7 +184,7 @@ template<typename __Type, typename ... __Arguments> class thread_dispatch
          {
             _m_lock.unlock<ev10::eIIe::READER>();
 
-            std::this_thread::sleep_for(std::chrono::microseconds(10));
+            std::this_thread::sleep_for(std::chrono::microseconds(0));
 
             _m_lock.lock<ev10::eIIe::READER>();
          }
@@ -217,7 +217,7 @@ template<typename __Type, typename ... __Arguments> class thread_dispatch
 
          _m_lock.lock<ev10::eIIe::WRITER>();
 
-         _m_join_amount = 4;
+         _m_join_amount = _m_thread_count;
 
          for (std::size_t index = 0; index < _m_thread_count; ++index)
          {

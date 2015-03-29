@@ -98,7 +98,7 @@ class rw_lock
                   _m_writer_lock.unlock();
             
                   // Ahead of the writer lock. Take the lock after waiting
-                  std::this_thread::sleep_for(std::chrono::microseconds(100));
+                  std::this_thread::sleep_for(std::chrono::microseconds(0));
 
                   _m_writer_lock.lock();
                }
@@ -137,7 +137,7 @@ class rw_lock
 
             while (_m_reader_amount)
             {
-               std::this_thread::sleep_for(std::chrono::microseconds(100));
+               std::this_thread::sleep_for(std::chrono::microseconds(0));
             }
 
             // Have the writer lock at this point
