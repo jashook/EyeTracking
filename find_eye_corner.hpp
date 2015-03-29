@@ -41,7 +41,7 @@
 
 void createCornerKernels();
 cv::Mat eyeCornerMap(const cv::Mat& region, bool left, bool left2);
-cv::Point2f findEyeCorner(cv::Mat region,bool left, bool left2);
+cv::Point2f findEyeCorner(cv::Mat region, bool left, bool left2);
 cv::Point2f findSubpixelEyeCorner(cv::Mat region, cv::Point maxP);
 void releaseCornerKernels();
 
