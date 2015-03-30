@@ -75,7 +75,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    cv::Mat eye_roi;
    cv::Mat eye_roi_unscaled = face(eye);
 
-   auto dispatch = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::get_dispatch();
+   auto dispatch = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*>::get_dispatch();
 
    // We are prefering accuracy over speed at this point
    // Using threading to combat the performance loss
@@ -95,16 +95,18 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    // Compute the threshold
    double magnitude_threshhold = computeDynamicThreshold(magnitudes, kGradientThreshold);
 
-   ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::set_value(&gradient_x, &gradient_y, &magnitudes);
+   //set the inputs for threading
+   //TODO QUESTION: DOES THIS NEED TO TAKE AN EMPTY MAT? OR IS THERE A BETTER WAY?
+   ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*>::set_value(&gradient_x, &gradient_y, &magnitudes, nullptr);
 
    // Making the lambda to thread.
-   auto threaded_area = [eye_roi, magnitude_threshhold] (std::tuple<cv::Mat*, cv::Mat*, cv::Mat*> tuple, int thread_index)
+   auto threaded_area = [eye_roi, magnitude_threshhold] (std::tuple<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*> tuple, int thread_index)
    {
       cv::Mat* gradient_x = std::get<0>(tuple);
       cv::Mat* gradient_y = std::get<1>(tuple);
       cv::Mat* magnitudes = std::get<2>(tuple);
 
-      std::size_t threads = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::thread_count();
+      std::size_t threads = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*>::thread_count();
 
       std::size_t start_index = thread_index * eye_roi.rows / threads;
       std::size_t end_index = thread_index * eye_roi.rows / threads + eye_roi.rows / threads;
@@ -115,7 +117,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
          double* gradient_row = gradient_x->ptr<double>(row_index);
          double* gradient_column = gradient_y->ptr<double>(row_index);
 
-         std::size_t threads = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::thread_count();
+         std::size_t threads = ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*>::thread_count();
 
          const double* magnitude_row = magnitudes->ptr<double>(row_index);
 
@@ -145,32 +147,37 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    dispatch->add_process_all(threaded_area);
    dispatch->join_all();
 
-   //ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::clean_up();
-
-   //TODO - JOIN HERE
-
    // -- Create a blurred and inverted image for weighting
    cv::Mat weight;
 
    GaussianBlur(eye_roi, weight, cv::Size(kWeightBlurSize, kWeightBlurSize), 0, 0);
 
-   //TODO - THREAD HERE
+   //set inputs
+   ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*>::set_value(&weight, nullptr, nullptr, nullptr);
 
-   // Invert at every index
-   for (int row_index = 0; row_index < weight.rows; ++row_index)
+   //make a lambda for threading
+   auto threaded_area2 = [](std::tuple<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*> tuple, int thread_index)
    {
-      unsigned char* current_row = weight.ptr<unsigned char>(row_index);
-
-      for (int column_index = 0; column_index < weight.cols; ++column_index)
+      cv::Mat* weight = std::get<0>(tuple);
+      // Invert at every index
+      for (int row_index = 0; row_index < weight->rows; ++row_index)
       {
-         current_row[column_index] = (255 - current_row[column_index]);
-      }
+         unsigned char* current_row = weight->ptr<unsigned char>(row_index);
 
-   }
-   //TODO - JOIN HERE
+         for (int column_index = 0; column_index < weight->cols; ++column_index)
+         {
+            current_row[column_index] = (255 - current_row[column_index]);
+         }
+
+      }
+   };
+   //run threaded lamda
+   dispatch->add_process_all(threaded_area2);
+   //join
+   dispatch->join_all();
+   
 
    // Run the algorithm!
-   //TODO - MAKE ONE OF THESE FOR EACH THREAD
    cv::Mat output_sum = cv::Mat::zeros(eye_roi.rows, eye_roi.cols, CV_64F);
 
    // For each possible gradient location
@@ -178,43 +185,56 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    // it evaluates every possible center for each gradient location instead of
    // every possible gradient location for every center.
 
-   // Only search in the inner 50% of the eye roi to find the eye center..
+   //set inputs
+   //TODO QUESTION: should weight, grad_x and grad_y be captured instead of passed? - technically they are const - i only passed them because i thought they needed to be 'split' in the same fashon as output_sum for threading
+   ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*>::set_value(&weight, &gradient_x, &gradient_y, &output_sum);
 
-   const int column_start = weight.cols * 0.25;
-   const int column_end = weight.cols * 0.75;
-
-   const int row_start = weight.rows * 0.25;
-   const int row_end = weight.rows * 0.75;
-
-   //TODO - THREAD HERE
-   //for (int thread_number = 0; thread_number < total_num_threads; ++thread_number)
-   //{
-
-  // }
-
-   // For every row
-   for (int current_row_index = row_start; current_row_index < row_end; ++current_row_index)
+   ////make the lambda
+   auto threaded_area3 = [](std::tuple<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*> tuple, int thread_index)
    {
-      // Get the Current Row
-      const unsigned char* current_weight_row = weight.ptr<unsigned char>(current_row_index);
+      cv::Mat* weight = std::get<0>(tuple);
+      cv::Mat* gradient_x = std::get<1>(tuple);
+      cv::Mat* gradient_y = std::get<2>(tuple);
+      cv::Mat output_sum = *std::get<3>(tuple);
 
-      const double* gradient_row_x_direction = gradient_x.ptr<double>(current_row_index);
-      const double* gradient_row_y_direction = gradient_y.ptr<double>(current_row_index);
+      // Only search in the inner 50% of the eye roi to find the eye center..
 
-      // For every pixel inside the row
-      for (int current_column_index = column_start; current_column_index < column_end; ++current_column_index)
+      const int column_start = weight->cols * 0.25;
+      const int column_end = weight->cols * 0.75;
+
+      const int row_start = weight->rows * 0.25;
+      const int row_end = weight->rows * 0.75;
+
+      // For every row
+      for (int current_row_index = row_start; current_row_index < row_end; ++current_row_index)
       {
-         double gradient_x = gradient_row_x_direction[current_column_index];
-         double gradient_y = gradient_row_y_direction[current_column_index];
+         // Get the Current Row
+         const unsigned char* current_weight_row = weight->ptr<unsigned char>(current_row_index);
 
-         if (gradient_x == 0.0 && gradient_y == 0.0)
+         const double* gradient_row_x_direction = gradient_x->ptr<double>(current_row_index);
+         const double* gradient_row_y_direction = gradient_y->ptr<double>(current_row_index);
+
+         // For every pixel inside the row
+         for (int current_column_index = column_start; current_column_index < column_end; ++current_column_index)
          {
-            continue;
-         }
+            double gradient_x = gradient_row_x_direction[current_column_index];
+            double gradient_y = gradient_row_y_direction[current_column_index];
 
-         testPossibleCentersFormula(current_column_index, current_row_index, current_weight_row[current_column_index], gradient_x, gradient_y, output_sum);
+            if (gradient_x == 0.0 && gradient_y == 0.0)
+            {
+               continue;
+            }
+
+            //consider moving threading in here?
+            testPossibleCentersFormula(current_column_index, current_row_index, current_weight_row[current_column_index], gradient_x, gradient_y, output_sum);
+         }
       }
-   }
+   };
+
+   //run the lambda
+   dispatch->add_process_all(threaded_area3);
+   //join
+   dispatch->join_all();
 
    //TODO - JOIN HERE? OR NAH? (maybe after the 'averaging' step?)
 
@@ -254,6 +274,9 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
       cv::minMaxLoc(output, NULL, &max_val, NULL, &max_p, mask);
 
    }
+
+   //clean up threads?
+   //ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*>::clean_up();
 
    return unscalePoint(max_p, eye);
 
@@ -320,25 +343,26 @@ cv::Mat floodKillEdges(cv::Mat &mat)
 void testPossibleCentersFormula(int x, int y, unsigned char weight, double gx, double gy, cv::Mat &out)
 {
    ////gridsize
-   int gs = 21;
-   // for all possible centers within the grid
-   for (int cy = y - gs; cy < y + gs; ++cy)
-   {
-      if (cy < 0 || cy > out.rows - 1)
-         continue;
-      double *Or = out.ptr<double>(cy);
-      for (int cx = x - gs; cx < x + gs; ++cx)
-      {
-         if (cx < 0 || cx > out.cols - 1)
-            continue;
+   //int gs = 21;
+   //// for all possible centers within the grid
+   //for (int cy = y - gs; cy < y + gs; ++cy)
+   //{
+   //   if (cy < 0 || cy > out.rows - 1)
+   //      continue;
+   //   double *Or = out.ptr<double>(cy);
+   //   for (int cx = x - gs; cx < x + gs; ++cx)
+   //   {
+   //      if (cx < 0 || cx > out.cols - 1)
+   //         continue;
 
          //try with original for loop structure from eyelike (no gridsize - loop over entire image)
-         //for all possible centers
-         //for (int cy = 0; cy < out.rows; ++cy)
-         //{
-         //	double *Or = out.ptr<double>(cy);
-         //	for (int cx = 0; cx < out.cols; ++cx)
-         //	{
+      //for all possible centers
+   
+   for (int cy = 0; cy < out.rows; ++cy)
+   {
+      double *Or = out.ptr<double>(cy);
+      for (int cx = 0; cx < out.cols; ++cx)
+      {
          if (x == cx && y == cy)
          {
             continue;
