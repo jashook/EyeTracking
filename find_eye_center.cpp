@@ -342,27 +342,27 @@ cv::Mat floodKillEdges(cv::Mat &mat)
 
 void testPossibleCentersFormula(int x, int y, unsigned char weight, double gx, double gy, cv::Mat &out)
 {
-   ////gridsize
-   //int gs = 21;
-   //// for all possible centers within the grid
-   //for (int cy = y - gs; cy < y + gs; ++cy)
-   //{
-   //   if (cy < 0 || cy > out.rows - 1)
-   //      continue;
-   //   double *Or = out.ptr<double>(cy);
-   //   for (int cx = x - gs; cx < x + gs; ++cx)
-   //   {
-   //      if (cx < 0 || cx > out.cols - 1)
-   //         continue;
+   //gridsize
+   int gs = 21;
+   // for all possible centers within the grid
+   for (int cy = y - gs; cy < y + gs; ++cy)
+   {
+      if (cy < 0 || cy > out.rows - 1)
+         continue;
+      double *Or = out.ptr<double>(cy);
+      for (int cx = x - gs; cx < x + gs; ++cx)
+      {
+         if (cx < 0 || cx > out.cols - 1)
+            continue;
 
          //try with original for loop structure from eyelike (no gridsize - loop over entire image)
       //for all possible centers
    
-   for (int cy = 0; cy < out.rows; ++cy)
-   {
-      double *Or = out.ptr<double>(cy);
-      for (int cx = 0; cx < out.cols; ++cx)
-      {
+   //for (int cy = 0; cy < out.rows; ++cy)
+   //{
+   //   double *Or = out.ptr<double>(cy);
+   //   for (int cx = 0; cx < out.cols; ++cx)
+   //   {
          if (x == cx && y == cy)
          {
             continue;
