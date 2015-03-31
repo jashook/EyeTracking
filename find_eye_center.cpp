@@ -189,7 +189,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debug_w
    //TODO QUESTION: should weight, grad_x and grad_y be captured instead of passed? - technically they are const - i only passed them because i thought they needed to be 'split' in the same fashon as output_sum for threading
    ev10::eIIe::thread_dispatch<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*>::set_value(&weight, &gradient_x, &gradient_y, &output_sum);
 
-   ////make the lambda
+   //make the lambda
    auto threaded_area3 = [](std::tuple<cv::Mat*, cv::Mat*, cv::Mat*, cv::Mat*> tuple, int thread_index)
    {
       cv::Mat* weight = std::get<0>(tuple);
