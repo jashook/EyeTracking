@@ -73,7 +73,7 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
          const std::string error_message = "Unable to capture on a connected device.  Please make sure everything is connected correctly and try again.";
 
          //open camera
-         _m_capture.open(1);
+         _m_capture.open(0);
 
          //initilize window for video feed
          cv::namedWindow("Video", CV_WINDOW_AUTOSIZE);
