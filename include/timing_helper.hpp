@@ -23,6 +23,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <chrono>
+#include <functional>
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 namespace ev10 {
 namespace eIIe {
 
@@ -64,7 +70,7 @@ template<time_quantity_t __TimeQuantity> class timing_helper
             {
                std::chrono::nanoseconds nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed_time);
 
-               return_value = nano_seconds.count();
+               return_value = (double)nano_seconds.count();
                break;
             }
 
@@ -72,7 +78,7 @@ template<time_quantity_t __TimeQuantity> class timing_helper
             {
                std::chrono::microseconds mc_seconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed_time);
 
-               return_value = mc_seconds.count();
+               return_value = (double)mc_seconds.count();
                break;
             }
 
@@ -80,13 +86,13 @@ template<time_quantity_t __TimeQuantity> class timing_helper
             {
                std::chrono::milliseconds ms_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time);
 
-               return_value = ms_seconds.count();
+               return_value = (double)ms_seconds.count();
                break;
             }
 
             case SECOND:
             {
-               return_value = elapsed_time.count();
+               return_value = (double)elapsed_time.count();
                break;
             }
          }

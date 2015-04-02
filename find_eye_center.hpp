@@ -33,8 +33,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-extern cv::Mat* leftCornerKernel;
-extern cv::Mat* rightCornerKernel;
+//extern cv::Mat* leftCornerKernel;
+//extern cv::Mat* rightCornerKernel;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,7 +44,7 @@ cv::Point findEyeCenter(cv::Mat& face, cv::Rect& eye, const std::string& debugWi
 cv::Mat floodKillEdges(cv::Mat& mat);
 bool floodShouldPushPoint(cv::Point& np, cv::Mat& mat);
 //void plotVecField(const cv::Mat& gradientX, const cv::Mat& gradientY, const cv::Mat& img);
-void testPossibleCentersFormula(int x, int y, unsigned char weight,double gx, double gy, cv::Mat &out);
+void testPossibleCentersFormula(int x, int y, unsigned char weight, double gx, double gy, cv::Mat &out);
 cv::Point unscalePoint(cv::Point p, cv::Rect origSize);
 void scaleToFastSize(const cv::Mat &src, cv::Mat &dst);
 
