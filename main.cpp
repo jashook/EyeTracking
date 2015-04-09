@@ -44,6 +44,7 @@
 
 #include "constants.hpp"
 #include "find_eye_center.hpp"
+#include "socket.hpp"
 #include "timing_helper.hpp"
 #include "video_capture.hpp"
 
@@ -77,28 +78,63 @@ ev10::eIIe::ring_buffer < cv::Point, queue_length > center_point_history(queue_l
 //          Subject (eye) has a radius of 1 inch
 //          Camera is in 640x480 (resolution of roughly 60 pixels/inch at 1 foot)
 //          Monitor resolution = 1920x1080, 24 inch monitor
-inline void calculateScreenAdjustment(cv::Point current)
+inline void calculate_screen_adjustment(cv::Point current)
 {
-   //get previous position
+   static ev9::socket* socket = new ev9::socket(7000);
+   static bool initialized = false;
+
+   if (!initialized)
+   {
+      try
+      {
+         socket->connect();
+
+         initialized = true;
+      }
+
+      catch (std::exception& e)
+      {
+         std::cout << "Unable to connect with the front end.  Failing fast." << std::endl;
+
+         exit(1);
+      }
+   }
+
+   // Get previous position
    cv::Point previous = center_point_history.pop();
    int previous_x = previous.x;
    //get current position
    int current_x = current.x;
 
-   //difference
+   // Difference
    float delta_x = abs(current_x - previous_x);
 
-   //calculate screen adjustment
+   // Calculate screen adjustment
    float adjustment_in_inches = delta_x * adjustmentPixelsToInches;
    static int adjustment_in_pixels = round(adjustment_in_inches * adjustment_in_pixels);
 
    if (current_x > previous_x)
    {
-      //move right?
+      // Move Right
+
+      char char_to_send = 252;
+      std::string message;
+
+      message.push_back(char_to_send);
+
+      socket->write(message);
    }
+
    else
    {
-      //move left?
+      // Move left
+
+      char char_to_send = 253;
+      std::string message;
+
+      message.push_back(char_to_send);
+
+      socket->write(message);
    }
 
    //store current point
@@ -214,7 +250,7 @@ inline void face_detection(cv::Mat& image)
    cv::rectangle(image, *face, cv::Scalar(255, 0, 0));
 
    //update centerpoint
-   //calculateScreenAdjustment(leftPupil);
+   calculate_screen_adjustment(leftPupil);
 }
 
 inline bool process_frame(cv::Mat& frame)

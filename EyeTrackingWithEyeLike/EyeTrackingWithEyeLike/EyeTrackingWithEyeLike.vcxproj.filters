@@ -68,5 +68,8 @@
     <ClInclude Include="..\..\include\timing_helper.hpp">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\socket.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
