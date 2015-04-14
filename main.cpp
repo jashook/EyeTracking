@@ -64,8 +64,16 @@
 cv::CascadeClassifier face_cascade;
 
 //store previous centerPoint(s)
-const int queue_length = 2;
-ev10::eIIe::ring_buffer < cv::Point, queue_length > center_point_history(queue_length);
+const int point_queue_length = 2;
+const int delta_queue_length = 150;
+ev10::eIIe::ring_buffer < cv::Point, point_queue_length > center_point_queue(point_queue_length);
+ev10::eIIe::ring_buffer < double, delta_queue_length > center_delta_history(delta_queue_length);
+ev10::eIIe::ring_buffer < double, delta_queue_length > variance_sum_terms(delta_queue_length);
+
+//make a counter variable to delay the start of moving the on screen image
+int screen_adjustment_hit_count = 0;
+int running_delta_sum = 0;
+int running_variance_sum = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,6 +97,85 @@ inline void calculate_screen_adjustment(cv::Point current)
          //continue, or throw away point
    /*END_TODO*/
 
+   //deal with first case (add to queue and return)
+   if (screen_adjustment_hit_count == 0)
+   {
+      ++screen_adjustment_hit_count;
+      center_point_queue.push(current);
+      return;
+   }
+
+   // Get previous position
+   cv::Point previous = center_point_queue.pop();
+   int previous_x = previous.x;
+   //get current position
+   int current_x = current.x;
+   //calculate Difference
+   double delta_x = abs(current_x - previous_x);
+
+   //////build up a history of points (store data for 5 seconds)
+   //if (screen_adjustment_hit_count ++ < delta_queue_length + 1)
+   //{
+   //   //store delta value
+   //   center_delta_history.push(delta_x);
+   //   //add to running delta sum
+   //   running_delta_sum += delta_x;
+
+   //   //calculate average
+   //   double mean_delta = running_delta_sum / screen_adjustment_hit_count;
+
+   //   //calculate variance sum term
+   //   double variance_term = pow(delta_x - mean_delta, 2);
+
+   //   //store variance sum term
+   //   variance_sum_terms.push(variance_term);
+
+   //   //add to running variance sum
+   //   running_variance_sum += variance_term;
+
+   //   //store current center point
+   //   center_point_queue.push(current);
+
+   //   //continue to next data point
+   //   return;
+   //}
+   ////ELSE - the program is ready to run - go for it.
+   //
+   ////calculate the variance -> stdev
+   //double stdev = sqrt(running_variance_sum / delta_queue_length);
+   //double mean_delta = running_delta_sum / delta_queue_length;
+
+   ////if delta is outside of 3 stdevs from the mean, return
+   //if (abs(mean_delta - delta_x) > 3 * stdev)
+   //{
+   //   //restore previous point (ignore current point?)
+   //   center_point_queue.push(previous);
+
+   //   //
+   //   return;
+   //}
+
+   ////subtract from running sums
+   //running_variance_sum -= variance_sum_terms.pop();
+   //running_delta_sum -= center_delta_history.pop();
+
+   ////add to running delta sum
+   //running_delta_sum += delta_x;
+   ////calcluate mean delta
+   //double mean_delta = running_delta_sum / delta_queue_length;
+
+   ////calculate variance sum term
+   //double variance_term = pow(delta_x - mean_delta, 2);
+
+   ////add to running variance sum
+   //running_variance_sum += variance_term;
+
+   ////store points
+   //variance_sum_terms.push(variance_term);
+   //center_delta_history.push(delta_x);
+
+   //adjust screen (everything below here is communication with the 'front end')
+
    //connect to the socket
    static ev9::socket* socket = new ev9::socket(7000);
    static bool initialized = false;
@@ -109,36 +196,25 @@ inline void calculate_screen_adjustment(cv::Point current)
          exit(1);
       }
    }
-
-   // Get previous position
-   cv::Point previous = center_point_history.pop();
-   int previous_x = previous.x;
-   //get current position
-   int current_x = current.x;
-
-   // Difference
-   volatile double delta_x = abs(current_x - previous_x);
-
-   //calculate adjustment on camera plane
-   volatile double delta_c_in_inches = delta_x / spatialResolution;
-
-   //calculate screen adjustment in inches
-   volatile double delta_s_in_inches = delta_c_in_inches * cameraDistance;
-
-   //calcluate screen adjustment in pixels
-   volatile double delta_s_in_pixels = delta_s_in_inches * monitorInchesToPixels;
-
-   //calculate adjustment in open GL ratio
-   volatile double adjustment_in_openGL_ratio = delta_s_in_pixels / monitorResolution;
-
-   //catch big moves?
-   if (adjustment_in_openGL_ratio > 0.1)
+   //if the delta in pixels = 0, return
+   if (delta_x == 0)
    {
-      center_point_history.push(current);
+      center_point_queue.push(previous);
       return;
    }
+   //calculate adjustment on camera plane
+   double delta_c_in_inches = delta_x / spatialResolution;
 
-   if (current_x > previous_x)
+   //calculate screen adjustment in inches
+   double delta_s_in_inches = delta_c_in_inches * cameraDistance;
+
+   //calcluate screen adjustment in pixels
+   double delta_s_in_pixels = delta_s_in_inches * monitorInchesToPixels;
+
+   //calculate adjustment in open GL ratio
+   double adjustment_in_openGL_ratio = delta_s_in_pixels / monitorResolution;
+
+   if (current_x < previous_x)
    {
       // Move Right
       //if right, send value as positive
@@ -152,7 +228,7 @@ inline void calculate_screen_adjustment(cv::Point current)
    {
       // Move left
       //if left, move value as negative
-      adjustment_in_openGL_ratio *= -1;
+      adjustment_in_openGL_ratio *= -1.0;
       static std::string adjustmentString = std::to_string(adjustment_in_openGL_ratio);
       socket->write(adjustmentString);
 
@@ -160,7 +236,7 @@ inline void calculate_screen_adjustment(cv::Point current)
    }
 
    //store current point
-   center_point_history.push(current);
+   center_point_queue.push(current);
 }
 
 inline cv::Rect* get_face_area(cv::Mat& current_image, int min_object_size)
@@ -223,7 +299,7 @@ inline void face_detection(cv::Mat& image)
       cv::imshow("debug_gray", mat_gray);
       cv::imshow("debug_color", image);
    #endif
-   // Dynamically scale min object size by the width of the image (hueristically determined to be img_width / 4)  ((hueristically is a cool word for made up))
+   // Dynamically scale min object size by the width of the image (hueristically determined to be img_width / 4)
 	int min_object_size = image.cols / 4;
 
    cv::Rect* face = get_face_area(mat_gray, min_object_size);
@@ -271,6 +347,9 @@ inline void face_detection(cv::Mat& image)
    // Print all the objects detected
    cv::rectangle(image, *face, cv::Scalar(255, 0, 0));
 
+   //change eye coordinate to image
+   leftPupil.x += face->x;
+   leftPupil.y += face->y;
    //update centerpoint
    calculate_screen_adjustment(leftPupil);
 }
