@@ -56,11 +56,12 @@ const bool kEnableEyeCorner = false;
 //screen adjustment parameters
 const float cameraDistance = 12;
 const int eyeRadius = 1;
-const float spatialResolution = 60; //THIS SHOULD NOT BE CONSTANT. IT SHOULD BE ADJUSTED BASED ON RESOLUTION, BUT RIGHT NOW WE ONLY RUN IN 640
-const float adjustmentPixelsToInches = cameraDistance / spatialResolution;
-const float monitorResolution = 1920; //THIS SHOULD ALSO NOT BE CONSTANT. CUZ. REASONS.
-const float montiorWidth = 20.625;  //...THIS SHOULD ALSO NOT BE CONSTANT. CUZ. REASONS.
-const float monitorInchesToPixels = monitorResolution / montiorWidth;
+const double spatialResolution = 60; //THIS SHOULD NOT BE CONSTANT. IT SHOULD BE ADJUSTED BASED ON RESOLUTION, BUT RIGHT NOW WE ONLY RUN IN 640
+const double adjustmentPixelsToInches = cameraDistance / spatialResolution;
+const double monitorResolution = 1920; //THIS SHOULD ALSO NOT BE CONSTANT. CUZ. REASONS.
+const double monotorHalfResolution = monitorResolution / 2;
+const double montiorWidth = 20.625;  //...THIS SHOULD ALSO NOT BE CONSTANT. CUZ. REASONS.
+const double monitorInchesToPixels = monitorResolution / montiorWidth;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

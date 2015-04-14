@@ -80,6 +80,16 @@ ev10::eIIe::ring_buffer < cv::Point, queue_length > center_point_history(queue_l
 //          Monitor resolution = 1920x1080, 24 inch monitor
 inline void calculate_screen_adjustment(cv::Point current)
 {
+
+   /*TODO*/
+      //establish a history of points
+         //dont start until a few seconds in (several hundred data)
+         //calculate mean/stdev
+         //check new point to see if it is reasonable, or if its an error (within 3 stdevs of mean)
+         //continue, or throw away point
+   /*END_TODO*/
+
+   //connect to the socket
    static ev9::socket* socket = new ev9::socket(7000);
    static bool initialized = false;
 
@@ -107,34 +117,46 @@ inline void calculate_screen_adjustment(cv::Point current)
    int current_x = current.x;
 
    // Difference
-   float delta_x = abs(current_x - previous_x);
+   volatile double delta_x = abs(current_x - previous_x);
 
-   // Calculate screen adjustment
-   float adjustment_in_inches = delta_x * adjustmentPixelsToInches;
-   static int adjustment_in_pixels = round(adjustment_in_inches * adjustment_in_pixels);
+   //calculate adjustment on camera plane
+   volatile double delta_c_in_inches = delta_x / spatialResolution;
+
+   //calculate screen adjustment in inches
+   volatile double delta_s_in_inches = delta_c_in_inches * cameraDistance;
+
+   //calcluate screen adjustment in pixels
+   volatile double delta_s_in_pixels = delta_s_in_inches * monitorInchesToPixels;
+
+   //calculate adjustment in open GL ratio
+   volatile double adjustment_in_openGL_ratio = delta_s_in_pixels / monitorResolution;
+
+   //catch big moves?
+   if (adjustment_in_openGL_ratio > 0.1)
+   {
+      center_point_history.push(current);
+      return;
+   }
 
    if (current_x > previous_x)
    {
       // Move Right
+      //if right, send value as positive
+      static std::string adjustmentString = std::to_string(adjustment_in_openGL_ratio);
+      socket->write(adjustmentString);
 
-      char char_to_send = 252;
-      std::string message;
-
-      message.push_back(char_to_send);
-
-      socket->write(message);
+      std::cout << "right\t" << std::flush;
    }
 
    else
    {
       // Move left
+      //if left, move value as negative
+      adjustment_in_openGL_ratio *= -1;
+      static std::string adjustmentString = std::to_string(adjustment_in_openGL_ratio);
+      socket->write(adjustmentString);
 
-      char char_to_send = 253;
-      std::string message;
-
-      message.push_back(char_to_send);
-
-      socket->write(message);
+      std::cout << "left\t" << std::flush;
    }
 
    //store current point
@@ -260,7 +282,7 @@ inline bool process_frame(cv::Mat& frame)
    double time = ev10::eIIe::timing_helper<ev10::eIIe::SECOND>::time(face_detection, frame);
 
 #ifdef FPS_TIMING
-	std::cout << "allMath/sec: " << 1 / time << "\t" << std::flush;
+	std::cout << "\tallMath/sec: " << 1 / time << "\t" << std::flush;
 #else
 	std::cout << "allMath/sec: " << 1 / time << "\r" << std::flush;
 #endif
