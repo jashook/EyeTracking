@@ -246,12 +246,12 @@ inline cv::Rect* get_face_area(cv::Mat& current_image, int min_object_size)
 
    ++s_frames;
 
-   if (s_frames > 50)
+   if (s_frames > 10)
    {
       s_frames = 1;
    }
 
-   if (s_frames == 50 || s_frames == 1)
+   if (s_frames == 10 || s_frames == 1)
    {
       // Detect faces
       std::vector<cv::Rect> faces;
