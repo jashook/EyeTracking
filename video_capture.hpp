@@ -97,14 +97,14 @@ template<bool(*__ProcessingFunction)(cv::Mat&), bool __Gui = false, size_t __Thr
 
 
          // Try 720p
-         //bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
-         //bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
+         /*bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
+         bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
 
-         //if (width && height)
-         //   {
-         //      std::cout << "Frame Width: " << _m_capture.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
-         //      return;
-         //   }
+         if (width && height)
+            {
+               std::cout << "Frame Width: " << _m_capture.get(CV_CAP_PROP_FRAME_WIDTH) << std::endl;
+               return;
+            }*/
 
          bool width = _m_capture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
          bool height = _m_capture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);

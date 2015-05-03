@@ -246,12 +246,12 @@ inline cv::Rect* get_face_area(cv::Mat& current_image, int min_object_size)
 
    ++s_frames;
 
-   if (s_frames > 50)
+   if (s_frames > 10)
    {
       s_frames = 1;
    }
 
-   if (s_frames == 50 || s_frames == 1)
+   if (s_frames == 10 || s_frames == 1)
    {
       // Detect faces
       std::vector<cv::Rect> faces;
@@ -361,7 +361,7 @@ inline bool process_frame(cv::Mat& frame)
    double time = ev10::eIIe::timing_helper<ev10::eIIe::SECOND>::time(face_detection, frame);
 
 #ifdef FPS_TIMING
-	std::cout << "\tallMath/sec: " << 1 / time << "\t" << std::flush;
+	std::cout << "allMath/sec: " << 1 / time << "\t" << std::flush;
 #else
 	std::cout << "allMath/sec: " << 1 / time << "\r" << std::flush;
 #endif
